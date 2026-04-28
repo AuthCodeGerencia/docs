@@ -14,7 +14,10 @@
         "tab": "Guides"
       },
       {
-        "tab": "API reference"
+        "tab": "API reference",
+        "pages": [
+          "untitled-page"
+        ]
       }
     ],
     "global": {
