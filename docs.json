@@ -11,7 +11,8 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides"
+        "tab": "Guides",
+        "hidden": true
       },
       {
         "tab": "API reference",
