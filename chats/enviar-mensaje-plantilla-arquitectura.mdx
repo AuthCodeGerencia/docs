@@ -1,0 +1,169 @@
+---
+title: "Send Template Message (Architecture)"
+description: "Send a WhatsApp template with dynamic parameters, media headers, or quick-reply buttons"
+api: "POST /chats/enviar/mensaje/plantilla/arquitectura"
+---
+
+Advanced version of the template send endpoint. Supports dynamic variable injection into template components (body, header, buttons), validates the template status with Meta before sending, and automatically moves chats from `pendiente` to `proceso` when a message is sent.
+
+Supports WhatsApp Business API Cloud (Meta), Messenger, Instagram DM, and QR-code providers. Billing via Stripe is tracked per message sent.
+
+## Authentication
+
+Requires [authentication](/authentication) — either an `x-api-key` header (App Key) or a JWT token + `empresa_id` in the request body.
+
+## Request Body
+
+<ParamField body="meta_id" type="string" required>
+  The contact's WhatsApp phone number in international format (e.g. `5215512345678`).
+</ParamField>
+
+<ParamField body="contacto_id" type="number" required>
+  Internal ID of the contact receiving the template.
+</ParamField>
+
+<ParamField body="chat_id" type="number" required>
+  Internal ID of the chat conversation.
+</ParamField>
+
+<ParamField body="empresa_id" type="number" required>
+  ID of the business sending the template.
+</ParamField>
+
+<ParamField body="plantilla_id" type="number" required>
+  Internal ID of the template to send.
+</ParamField>
+
+<ParamField body="parameters" type="object">
+  Dynamic values to inject into the template's variable placeholders. The structure mirrors the Meta template components format.
+
+  ```json
+  {
+    "header": [{ "type": "text", "text": "Juan" }],
+    "body": [
+      { "type": "text", "text": "Orden #1234" },
+      { "type": "text", "text": "mañana a las 10am" }
+    ]
+  }
+  ```
+</ParamField>
+
+<ParamField body="user_id" type="number">
+  ID of the user (agent) triggering the send. Used for message attribution.
+</ParamField>
+
+<ParamField body="user_name" type="string">
+  Display name of the user sending the template.
+</ParamField>
+
+<ParamField body="categoria_id" type="number">
+  Optional category ID for reporting purposes.
+</ParamField>
+
+<ParamField body="fecha" type="string">
+  Optional date associated with the message (ISO 8601 format).
+</ParamField>
+
+<ParamField body="token" type="string">
+  JWT session token. Required when **not** using the App Key (`x-api-key`) authentication method.
+</ParamField>
+
+## Response
+
+<ResponseField name="status" type="string">
+  `"success"` when the template was accepted and logged.
+</ResponseField>
+
+<RequestExample>
+```bash App Key — with parameters
+curl -X POST https://api.iobot.chat/chats/enviar/mensaje/plantilla/arquitectura \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_APP_KEY" \
+  -d '{
+    "meta_id": "5215512345678",
+    "contacto_id": 101,
+    "chat_id": 55,
+    "empresa_id": 1,
+    "plantilla_id": 12,
+    "user_id": 42,
+    "user_name": "Carlos",
+    "parameters": {
+      "body": [
+        { "type": "text", "text": "Juan Pérez" },
+        { "type": "text", "text": "Orden #9982" }
+      ]
+    }
+  }'
+```
+
+```bash JWT Token
+curl -X POST https://api.iobot.chat/chats/enviar/mensaje/plantilla/arquitectura \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "meta_id": "5215512345678",
+    "contacto_id": 101,
+    "chat_id": 55,
+    "empresa_id": 1,
+    "plantilla_id": 12,
+    "user_id": 42,
+    "user_name": "Carlos",
+    "parameters": {
+      "body": [
+        { "type": "text", "text": "Juan Pérez" },
+        { "type": "text", "text": "Orden #9982" }
+      ]
+    }
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Success
+{
+  "status": "success"
+}
+```
+
+```json 400 Template Pending Approval
+{
+  "success": false,
+  "error": "La plantilla aún no ha sido aprobada por meta. Espera unos segundos y vuelve a intentarlo."
+}
+```
+
+```json 400 Monthly Limit Reached
+{
+  "status": "error",
+  "error": "Limite de templates alcanzado"
+}
+```
+
+```json 400 Provider Send Error
+{
+  "status": "error",
+  "error": "Error al enviar la plantilla"
+}
+```
+
+```json 403 Business Not Found
+{
+  "estatus": "error",
+  "error": "La empresa no existe"
+}
+```
+
+```json 403 Template Not Found
+{
+  "estatus": "error",
+  "error": "La plantilla no existe"
+}
+```
+
+```json 500 Unexpected Error
+{
+  "status": "error",
+  "error": "Error: ..."
+}
+```
+</ResponseExample>

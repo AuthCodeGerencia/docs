@@ -1,0 +1,118 @@
+---
+title: "Send Template Message"
+description: "Send a WhatsApp approved message template to a contact"
+api: "POST /chats/enviar/mensaje/plantilla"
+---
+
+Sends a pre-approved WhatsApp message template to a contact within an existing chat. The message is recorded in the database and pushed to real-time listeners via Pusher.
+
+This endpoint enforces the monthly template sending limit defined by the business plan.
+
+<Warning>
+  Use [Send Template Message (Architecture)](/chats/enviar-mensaje-plantilla-arquitectura) instead for templates that include dynamic parameters (variables, media headers, quick-reply buttons). This endpoint is suited for simple, static templates.
+</Warning>
+
+## Authentication
+
+Requires [authentication](/authentication) — either an `x-api-key` header (App Key) or a JWT token + `empresa_id` in the request body.
+
+## Request Body
+
+<ParamField body="meta_id" type="string" required>
+  The contact's WhatsApp phone number (in international format, e.g. `5215512345678`).
+</ParamField>
+
+<ParamField body="contacto_id" type="number" required>
+  Internal ID of the contact.
+</ParamField>
+
+<ParamField body="chat_id" type="number" required>
+  Internal ID of the chat conversation.
+</ParamField>
+
+<ParamField body="empresa_id" type="number" required>
+  ID of the business sending the template.
+</ParamField>
+
+<ParamField body="plantilla_id" type="number" required>
+  Internal ID of the template to send.
+</ParamField>
+
+<ParamField body="user_id" type="number">
+  ID of the user (agent) triggering the send. Used for message attribution.
+</ParamField>
+
+<ParamField body="user_name" type="string">
+  Display name of the user sending the template. Shown in the chat timeline.
+</ParamField>
+
+<ParamField body="token" type="string">
+  JWT session token. Required when **not** using the App Key (`x-api-key`) authentication method.
+</ParamField>
+
+## Response
+
+<ResponseField name="status" type="string">
+  `"success"` when the template was sent and logged. `"error"` when the provider returned a failure.
+</ResponseField>
+
+<RequestExample>
+```bash App Key
+curl -X POST https://api.iobot.chat/chats/enviar/mensaje/plantilla \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_APP_KEY" \
+  -d '{
+    "meta_id": "5215512345678",
+    "contacto_id": 101,
+    "chat_id": 55,
+    "empresa_id": 1,
+    "plantilla_id": 7,
+    "user_id": 42,
+    "user_name": "Carlos"
+  }'
+```
+
+```bash JWT Token
+curl -X POST https://api.iobot.chat/chats/enviar/mensaje/plantilla \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "meta_id": "5215512345678",
+    "contacto_id": 101,
+    "chat_id": 55,
+    "empresa_id": 1,
+    "plantilla_id": 7,
+    "user_id": 42,
+    "user_name": "Carlos"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Success
+{
+  "status": "success"
+}
+```
+
+```json 200 Send Error
+{
+  "status": "error",
+  "error": "Error en el envío del mensaje de plantilla"
+}
+```
+
+```json 400 Monthly Limit Reached
+{
+  "status": "warning",
+  "error": "Limite de plantillas alcanzado"
+}
+```
+
+```json 403 Business Not Found
+{
+  "estatus": "error",
+  "error": "La empresa no existe"
+}
+```
+</ResponseExample>

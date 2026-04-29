@@ -1,0 +1,72 @@
+---
+title: "Authentication"
+description: "Learn how to authenticate requests to the Iobot API"
+---
+
+The Iobot API supports two authentication methods depending on your use case.
+
+## App Key (Business API Key)
+
+The simplest way to authenticate is with your business **App Key**. This is ideal for server-to-server integrations and external clients.
+
+Include the key in every request as an HTTP header:
+
+```http
+x-api-key: <your-app-key>
+```
+
+When you authenticate with the App Key, the API automatically resolves the business and its admin user — you do not need to pass `empresa_id` or a JWT token.
+
+<Info>
+  You can find your App Key in the Iobot dashboard under **Settings → Integrations → App Key**.
+</Info>
+
+### Example
+
+```bash
+curl -X POST https://api.iobot.chat/chats/obtener/mensaje/plantilla \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_APP_KEY" \
+  -d '{
+    "empresa_id": 1,
+    "usuario_id": 42
+  }'
+```
+
+---
+
+## JWT Token (User Session)
+
+Authenticated users in the Iobot platform can use their session JWT token together with a `businessId`. This method is used by the Iobot web app.
+
+Pass the token and the business ID in the request body:
+
+| Field | Type | Description |
+|---|---|---|
+| `token` | `string` | JWT issued at login |
+| `empresa_id` | `number` | ID of the business the user belongs to |
+
+```bash
+curl -X POST https://api.iobot.chat/chats/obtener/mensaje/plantilla \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "empresa_id": 1,
+    "usuario_id": 42
+  }'
+```
+
+<Note>
+  The JWT must correspond to a user that belongs to the requested business (or the same business group). Requests where the user's business does not match `empresa_id` are rejected with `400`.
+</Note>
+
+---
+
+## Error Responses
+
+| Status | Message | Cause |
+|---|---|---|
+| `400` | `Token is required` | No JWT token provided in JWT mode |
+| `400` | `El usuario no pertenece a esta empresa` | JWT user does not belong to the requested business |
+| `401` | `Invalid API key` | The `x-api-key` header value does not match any business |
+| `401` | `No admin user found for this business` | Business exists but has no admin user |

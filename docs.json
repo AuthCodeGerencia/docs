@@ -12,11 +12,20 @@
     "tabs": [
       {
         "tab": "Guides",
-        "hidden": true
+        "pages": ["authentication"]
       },
       {
         "tab": "API reference",
-        "pages": ["untitled-page"]
+        "groups": [
+          {
+            "group": "Chats",
+            "pages": [
+              "chats/obtener-mensaje-plantilla",
+              "chats/enviar-mensaje-plantilla",
+              "chats/enviar-mensaje-plantilla-arquitectura"
+            ]
+          }
+        ]
       }
     ],
     "global": {
