@@ -1,0 +1,97 @@
+---
+title: "Enviar Plantilla como Business"
+description: "Envía una plantilla de WhatsApp directamente desde el negocio, sin requerir un agente asignado"
+api: "POST /chats/enviar/plantilla/business"
+---
+
+Envía una plantilla de WhatsApp en nombre del negocio. A diferencia del endpoint de arquitectura, este endpoint no requiere un `chat_id` ni `contacto_id` preexistentes — crea automáticamente el contacto y la conversación si no existen.
+
+Útil para disparos externos, integraciones de CRM, o flujos donde el negocio inicia el contacto sin intervención de un agente.
+
+## Autenticación
+
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
+
+## Cuerpo de la solicitud
+
+<ParamField body="empresa_id" type="number" required>
+  ID del negocio que envía la plantilla.
+</ParamField>
+
+<ParamField body="phone_number" type="string" required>
+  Número de WhatsApp del destinatario. Se aceptan formatos con o sin caracteres especiales (guiones, espacios, `+`) — el sistema extrae solo los dígitos. Ejemplo: `+52 155 1234 5678` o `5215512345678`.
+</ParamField>
+
+<ParamField body="plantilla_id" type="number" required>
+  ID interno de la plantilla a enviar. Debe pertenecer al negocio indicado en `empresa_id`.
+</ParamField>
+
+<ParamField body="parameters" type="array">
+  Lista de parámetros dinámicos para inyectar en los componentes de la plantilla. Sigue el formato de componentes de Meta. Por defecto es un arreglo vacío.
+
+  ```json
+  [
+    { "type": "text", "text": "Juan Pérez" },
+    { "type": "text", "text": "Orden #1234" }
+  ]
+  ```
+</ParamField>
+
+## Respuesta
+
+<ResponseField name="success" type="boolean">
+  `true` cuando la plantilla fue enviada y registrada correctamente.
+</ResponseField>
+
+<RequestExample>
+```bash
+curl -X POST https://beta.api-iobot-desarrollo.com/chats/enviar/plantilla/business \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: TU_APP_KEY" \
+  -d '{
+    "empresa_id": 1,
+    "phone_number": "5215512345678",
+    "plantilla_id": 12,
+    "parameters": [
+      { "type": "text", "text": "Juan Pérez" },
+      { "type": "text", "text": "Orden #9982" }
+    ]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Éxito
+{
+  "success": true
+}
+```
+
+```json 400 Error al enviar
+{
+  "success": false,
+  "error": "Error al enviar la plantilla"
+}
+```
+
+```json 404 Negocio no encontrado
+{
+  "success": false,
+  "error": "Empresa no encontrada"
+}
+```
+
+```json 404 Plantilla no encontrada
+{
+  "success": false,
+  "error": "Plantilla no encontrada"
+}
+```
+
+```json 500 Error inesperado
+{
+  "success": false,
+  "error": "Error: ..."
+}
+```
+</ResponseExample>

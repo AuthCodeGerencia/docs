@@ -21,7 +21,8 @@
             "group": "Chats",
             "pages": [
               "chats/obtener-mensaje-plantilla",
-              "chats/enviar-mensaje-plantilla-arquitectura"
+              "chats/enviar-mensaje-plantilla-arquitectura",
+              "chats/enviar-plantilla-business"
             ]
           }
         ]
@@ -62,7 +63,11 @@
     ]
   },
   "api": {
-    "baseUrl": "https://beta.api-iobot-desarrollo.com"
+    "baseUrl": "https://beta.api-iobot-desarrollo.com",
+    "auth": {
+      "method": "key",
+      "name": "x-api-key"
+    }
   },
   "footer": {}
 }
