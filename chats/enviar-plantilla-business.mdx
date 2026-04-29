@@ -33,13 +33,10 @@ Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenti
 </ParamField>
 
 <ParamField body="parameters" type="array">
-  Lista de parámetros dinámicos para inyectar en los componentes de la plantilla. Sigue el formato de componentes de Meta. Por defecto es un arreglo vacío. Debe ser un arreglo; de lo contrario la solicitud será rechazada con `400`.
+  Lista de valores de texto para inyectar en los componentes dinámicos de la plantilla. Cada elemento debe ser un **string**; el sistema los envuelve automáticamente en el formato `{ type: "text", text: "..." }` al enviar a Meta. Por defecto es un arreglo vacío. Debe ser un arreglo; de lo contrario la solicitud será rechazada con `400`.
 
   ```json
-  [
-    { "type": "text", "text": "Juan Pérez" },
-    { "type": "text", "text": "Orden #1234" }
-  ]
+  ["Juan Pérez", "Orden #1234"]
   ```
 </ParamField>
 
@@ -63,10 +60,7 @@ curl -X POST https://beta.api-iobot-desarrollo.com/chats/enviar/plantilla/busine
     "phone_number": "5215512345678",
     "plantilla_id": 12,
     "name": "Juan Pérez",
-    "parameters": [
-      { "type": "text", "text": "Juan Pérez" },
-      { "type": "text", "text": "Orden #9982" }
-    ]
+    "parameters": ["Juan Pérez", "Orden #9982"]
   }'
 ```
 </RequestExample>

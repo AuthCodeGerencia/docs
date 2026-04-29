@@ -40,17 +40,11 @@ Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenti
   ID interno de la plantilla a enviar.
 </ParamField>
 
-<ParamField body="parameters" type="object">
-  Valores dinámicos para inyectar en los componentes de la plantilla. La estructura sigue el formato de componentes de Meta.
+<ParamField body="parameters" type="array">
+  Lista de valores de texto para inyectar en el cuerpo (`body`) de la plantilla. Cada elemento debe ser un **string**; el sistema los envuelve automáticamente en `{ type: "text", text: "..." }` al enviar a Meta. Solo se inyectan en el componente `body` — los parámetros de encabezado o botones no son soportados por este campo.
 
   ```json
-  {
-    "header": [{ "type": "text", "text": "Juan" }],
-    "body": [
-      { "type": "text", "text": "Orden #1234" },
-      { "type": "text", "text": "mañana a las 10am" }
-    ]
-  }
+  ["Orden #1234", "mañana a las 10am"]
   ```
 </ParamField>
 
@@ -89,12 +83,7 @@ curl -X POST https://beta.api-iobot-desarrollo.com/chats/enviar/mensaje/plantill
     "plantilla_id": 12,
     "user_id": 42,
     "user_name": "Carlos",
-    "parameters": {
-      "body": [
-        { "type": "text", "text": "Juan Pérez" },
-        { "type": "text", "text": "Orden #9982" }
-      ]
-    }
+    "parameters": ["Juan Pérez", "Orden #9982"]
   }'
 ```
 </RequestExample>
