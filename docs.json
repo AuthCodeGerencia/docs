@@ -63,10 +63,12 @@
     ]
   },
   "api": {
-    "baseUrl": "https://beta.api-iobot-desarrollo.com",
-    "auth": {
-      "method": "key",
-      "name": "x-api-key"
+    "mdx": {
+      "server": "https://beta.api-iobot-desarrollo.com",
+      "auth": {
+        "method": "key",
+        "name": "x-api-key"
+      }
     }
   },
   "footer": {}
