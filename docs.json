@@ -21,7 +21,6 @@
             "group": "Chats",
             "pages": [
               "chats/obtener-mensaje-plantilla",
-              "chats/enviar-mensaje-plantilla",
               "chats/enviar-mensaje-plantilla-arquitectura"
             ]
           }
