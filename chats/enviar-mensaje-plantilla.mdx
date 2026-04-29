@@ -1,82 +1,63 @@
 ---
-title: "Send Template Message"
-description: "Send a WhatsApp approved message template to a contact"
+title: "Enviar Plantilla de Mensaje"
+description: "Envía una plantilla de mensaje de WhatsApp aprobada a un contacto"
 api: "POST /chats/enviar/mensaje/plantilla"
 ---
 
-Sends a pre-approved WhatsApp message template to a contact within an existing chat. The message is recorded in the database and pushed to real-time listeners via Pusher.
+Envía una plantilla de mensaje de WhatsApp pre-aprobada a un contacto dentro de una conversación existente. El mensaje se registra en la base de datos y se notifica en tiempo real mediante Pusher.
 
-This endpoint enforces the monthly template sending limit defined by the business plan.
+Este endpoint verifica el límite mensual de envío de plantillas definido por el plan del negocio.
 
 <Warning>
-  Use [Send Template Message (Architecture)](/chats/enviar-mensaje-plantilla-arquitectura) instead for templates that include dynamic parameters (variables, media headers, quick-reply buttons). This endpoint is suited for simple, static templates.
+  Usa [Enviar Plantilla (Arquitectura)](/chats/enviar-mensaje-plantilla-arquitectura) si la plantilla incluye parámetros dinámicos (variables, encabezados multimedia o botones de respuesta rápida). Este endpoint es para plantillas simples y estáticas.
 </Warning>
 
-## Authentication
+## Autenticación
 
-Requires [authentication](/authentication) — either an `x-api-key` header (App Key) or a JWT token + `empresa_id` in the request body.
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
 
-## Request Body
+## Cuerpo de la solicitud
 
 <ParamField body="meta_id" type="string" required>
-  The contact's WhatsApp phone number (in international format, e.g. `5215512345678`).
+  Número de WhatsApp del contacto en formato internacional (ej. `5215512345678`).
 </ParamField>
 
 <ParamField body="contacto_id" type="number" required>
-  Internal ID of the contact.
+  ID interno del contacto.
 </ParamField>
 
 <ParamField body="chat_id" type="number" required>
-  Internal ID of the chat conversation.
+  ID interno de la conversación.
 </ParamField>
 
 <ParamField body="empresa_id" type="number" required>
-  ID of the business sending the template.
+  ID del negocio que envía la plantilla.
 </ParamField>
 
 <ParamField body="plantilla_id" type="number" required>
-  Internal ID of the template to send.
+  ID interno de la plantilla a enviar.
 </ParamField>
 
 <ParamField body="user_id" type="number">
-  ID of the user (agent) triggering the send. Used for message attribution.
+  ID del usuario (agente) que realiza el envío. Se usa para atribución del mensaje.
 </ParamField>
 
 <ParamField body="user_name" type="string">
-  Display name of the user sending the template. Shown in the chat timeline.
+  Nombre del usuario que envía la plantilla. Se muestra en la línea de tiempo del chat.
 </ParamField>
 
-<ParamField body="token" type="string">
-  JWT session token. Required when **not** using the App Key (`x-api-key`) authentication method.
-</ParamField>
-
-## Response
+## Respuesta
 
 <ResponseField name="status" type="string">
-  `"success"` when the template was sent and logged. `"error"` when the provider returned a failure.
+  `"success"` cuando la plantilla fue enviada y registrada. `"error"` cuando el proveedor retornó un fallo.
 </ResponseField>
 
 <RequestExample>
-```bash App Key
-curl -X POST https://api.iobot.chat/chats/enviar/mensaje/plantilla \
+```bash
+curl -X POST https://beta.api-iobot-desarrollo.com/chats/enviar/mensaje/plantilla \
   -H "Content-Type: application/json" \
-  -H "x-api-key: YOUR_APP_KEY" \
+  -H "x-api-key: TU_APP_KEY" \
   -d '{
-    "meta_id": "5215512345678",
-    "contacto_id": 101,
-    "chat_id": 55,
-    "empresa_id": 1,
-    "plantilla_id": 7,
-    "user_id": 42,
-    "user_name": "Carlos"
-  }'
-```
-
-```bash JWT Token
-curl -X POST https://api.iobot.chat/chats/enviar/mensaje/plantilla \
-  -H "Content-Type: application/json" \
-  -d '{
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "meta_id": "5215512345678",
     "contacto_id": 101,
     "chat_id": 55,
@@ -89,27 +70,27 @@ curl -X POST https://api.iobot.chat/chats/enviar/mensaje/plantilla \
 </RequestExample>
 
 <ResponseExample>
-```json 200 Success
+```json 200 Éxito
 {
   "status": "success"
 }
 ```
 
-```json 200 Send Error
+```json 200 Error de envío
 {
   "status": "error",
   "error": "Error en el envío del mensaje de plantilla"
 }
 ```
 
-```json 400 Monthly Limit Reached
+```json 400 Límite mensual alcanzado
 {
   "status": "warning",
   "error": "Limite de plantillas alcanzado"
 }
 ```
 
-```json 403 Business Not Found
+```json 403 Negocio no encontrado
 {
   "estatus": "error",
   "error": "La empresa no existe"

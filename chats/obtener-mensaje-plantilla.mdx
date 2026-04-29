@@ -1,67 +1,53 @@
 ---
-title: "List Message Templates"
-description: "Retrieve the WhatsApp message templates available for a business"
+title: "Listar Plantillas de Mensaje"
+description: "Obtén las plantillas de mensaje de WhatsApp disponibles para un negocio"
 api: "POST /chats/obtener/mensaje/plantilla"
 ---
 
-Returns all visible, active message templates associated with a business. Templates are fetched from the Meta WABA and enriched with local configuration (visibility, allowed agents, etc.).
+Retorna todas las plantillas de mensaje activas y visibles asociadas a un negocio. Las plantillas se obtienen desde el WABA de Meta y se enriquecen con la configuración local (visibilidad, agentes permitidos, etc.).
 
-If the requesting user has the **agent** role (`role_id: 5`), only templates explicitly assigned to that agent are returned.
+Si el usuario tiene el rol de **agente** (`role_id: 5`), solo se retornan las plantillas asignadas explícitamente a ese agente.
 
-## Authentication
+## Autenticación
 
-Requires [authentication](/authentication) — either an `x-api-key` header (App Key) or a JWT token + `empresa_id` in the request body.
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
 
-## Request Body
+## Cuerpo de la solicitud
 
 <ParamField body="empresa_id" type="number" required>
-  ID of the business whose templates you want to retrieve.
+  ID del negocio cuyas plantillas deseas obtener.
 </ParamField>
 
 <ParamField body="usuario_id" type="number" required>
-  ID of the user making the request. Used to filter templates when the user is an agent.
+  ID del usuario que realiza la solicitud. Se usa para filtrar plantillas cuando el usuario es agente.
 </ParamField>
 
-<ParamField body="token" type="string">
-  JWT session token. Required when **not** using the App Key (`x-api-key`) authentication method.
-</ParamField>
-
-## Response
+## Respuesta
 
 <ResponseField name="plantillas" type="array">
-  List of templates available for the business.
+  Lista de plantillas disponibles para el negocio.
 
-  <Expandable title="Template object">
-    <ResponseField name="id" type="number">Internal template ID.</ResponseField>
-    <ResponseField name="id_plantilla" type="string">Template name as registered in Meta.</ResponseField>
-    <ResponseField name="empresa_id" type="number">Business the template belongs to.</ResponseField>
-    <ResponseField name="visible" type="boolean">Whether the template is visible to users.</ResponseField>
+  <Expandable title="Objeto de plantilla">
+    <ResponseField name="id" type="number">ID interno de la plantilla.</ResponseField>
+    <ResponseField name="id_plantilla" type="string">Nombre de la plantilla registrado en Meta.</ResponseField>
+    <ResponseField name="empresa_id" type="number">Negocio al que pertenece la plantilla.</ResponseField>
+    <ResponseField name="visible" type="boolean">Indica si la plantilla es visible para los usuarios.</ResponseField>
     <ResponseField name="agentes_permitidos" type="string">
-      Comma-separated list of agent user IDs allowed to use this template. Empty means all agents can use it.
+      Lista de IDs de agentes separados por coma que pueden usar esta plantilla. Si está vacío, todos los agentes pueden usarla.
     </ResponseField>
-    <ResponseField name="deleted_at" type="string | null">Soft-delete timestamp. `null` for active templates.</ResponseField>
+    <ResponseField name="deleted_at" type="string | null">Marca de eliminación suave. `null` para plantillas activas.</ResponseField>
     <ResponseField name="state" type="string">
-      Current approval status from Meta. Possible values: `APPROVED`, `PENDING`, `REJECTED`, `no_status`.
+      Estado de aprobación actual en Meta. Valores posibles: `APPROVED`, `PENDING`, `REJECTED`, `no_status`.
     </ResponseField>
   </Expandable>
 </ResponseField>
 
 <RequestExample>
-```bash App Key
-curl -X POST https://api.iobot.chat/chats/obtener/mensaje/plantilla \
+```bash
+curl -X POST https://beta.api-iobot-desarrollo.com/chats/obtener/mensaje/plantilla \
   -H "Content-Type: application/json" \
-  -H "x-api-key: YOUR_APP_KEY" \
+  -H "x-api-key: TU_APP_KEY" \
   -d '{
-    "empresa_id": 1,
-    "usuario_id": 42
-  }'
-```
-
-```bash JWT Token
-curl -X POST https://api.iobot.chat/chats/obtener/mensaje/plantilla \
-  -H "Content-Type: application/json" \
-  -d '{
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "empresa_id": 1,
     "usuario_id": 42
   }'

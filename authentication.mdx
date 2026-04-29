@@ -1,32 +1,28 @@
 ---
-title: "Authentication"
-description: "Learn how to authenticate requests to the Iobot API"
+title: "Autenticación"
+description: "Cómo autenticar las solicitudes a la API de Iobot"
 ---
 
-The Iobot API supports two authentication methods depending on your use case.
+Todas las solicitudes a la API de Iobot requieren autenticación mediante el **App Key** de tu negocio.
 
-## App Key (Business API Key)
+## App Key
 
-The simplest way to authenticate is with your business **App Key**. This is ideal for server-to-server integrations and external clients.
-
-Include the key in every request as an HTTP header:
+Incluye tu App Key en cada solicitud como encabezado HTTP:
 
 ```http
-x-api-key: <your-app-key>
+x-api-key: <tu-app-key>
 ```
-
-When you authenticate with the App Key, the API automatically resolves the business and its admin user — you do not need to pass `empresa_id` or a JWT token.
 
 <Info>
-  You can find your App Key in the Iobot dashboard under **Settings → Integrations → App Key**.
+  Puedes encontrar tu App Key en el panel de Iobot en **Configuración → Integraciones → App Key**.
 </Info>
 
-### Example
+### Ejemplo
 
 ```bash
-curl -X POST https://api.iobot.chat/chats/obtener/mensaje/plantilla \
+curl -X POST https://beta.api-iobot-desarrollo.com/chats/obtener/mensaje/plantilla \
   -H "Content-Type: application/json" \
-  -H "x-api-key: YOUR_APP_KEY" \
+  -H "x-api-key: TU_APP_KEY" \
   -d '{
     "empresa_id": 1,
     "usuario_id": 42
@@ -35,38 +31,9 @@ curl -X POST https://api.iobot.chat/chats/obtener/mensaje/plantilla \
 
 ---
 
-## JWT Token (User Session)
+## Errores de autenticación
 
-Authenticated users in the Iobot platform can use their session JWT token together with a `businessId`. This method is used by the Iobot web app.
-
-Pass the token and the business ID in the request body:
-
-| Field | Type | Description |
+| Estado | Mensaje | Causa |
 |---|---|---|
-| `token` | `string` | JWT issued at login |
-| `empresa_id` | `number` | ID of the business the user belongs to |
-
-```bash
-curl -X POST https://api.iobot.chat/chats/obtener/mensaje/plantilla \
-  -H "Content-Type: application/json" \
-  -d '{
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "empresa_id": 1,
-    "usuario_id": 42
-  }'
-```
-
-<Note>
-  The JWT must correspond to a user that belongs to the requested business (or the same business group). Requests where the user's business does not match `empresa_id` are rejected with `400`.
-</Note>
-
----
-
-## Error Responses
-
-| Status | Message | Cause |
-|---|---|---|
-| `400` | `Token is required` | No JWT token provided in JWT mode |
-| `400` | `El usuario no pertenece a esta empresa` | JWT user does not belong to the requested business |
-| `401` | `Invalid API key` | The `x-api-key` header value does not match any business |
-| `401` | `No admin user found for this business` | Business exists but has no admin user |
+| `401` | `Invalid API key` | El valor del encabezado `x-api-key` no corresponde a ningún negocio |
+| `401` | `No admin user found for this business` | El negocio existe pero no tiene un usuario administrador |
