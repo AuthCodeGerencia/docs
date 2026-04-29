@@ -40,7 +40,7 @@ Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenti
   ID interno de la plantilla a enviar.
 </ParamField>
 
-<ParamField body="parameters" type="array">
+<ParamField body="parameters" type="string[]">
   Lista de valores de texto para inyectar en el cuerpo (`body`) de la plantilla. Cada elemento debe ser un **string**; el sistema los envuelve automáticamente en `{ type: "text", text: "..." }` al enviar a Meta. Solo se inyectan en el componente `body` — los parámetros de encabezado o botones no son soportados por este campo.
 
   ```json

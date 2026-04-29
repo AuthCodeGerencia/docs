@@ -32,7 +32,7 @@ Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenti
   ID interno de la plantilla a enviar. Debe pertenecer al negocio indicado en `empresa_id`.
 </ParamField>
 
-<ParamField body="parameters" type="array">
+<ParamField body="parameters" type="string[]">
   Lista de valores de texto para inyectar en los componentes dinámicos de la plantilla. Cada elemento debe ser un **string**; el sistema los envuelve automáticamente en el formato `{ type: "text", text: "..." }` al enviar a Meta. Por defecto es un arreglo vacío. Debe ser un arreglo; de lo contrario la solicitud será rechazada con `400`.
 
   ```json
