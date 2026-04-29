@@ -27,7 +27,7 @@ Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenti
 </ParamField>
 
 <ParamField body="parameters" type="array">
-  Lista de parámetros dinámicos para inyectar en los componentes de la plantilla. Sigue el formato de componentes de Meta. Por defecto es un arreglo vacío.
+  Lista de parámetros dinámicos para inyectar en los componentes de la plantilla. Sigue el formato de componentes de Meta. Por defecto es un arreglo vacío. Debe ser un arreglo; de lo contrario la solicitud será rechazada con `400`.
 
   ```json
   [
@@ -35,6 +35,10 @@ Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenti
     { "type": "text", "text": "Orden #1234" }
   ]
   ```
+</ParamField>
+
+<ParamField body="name" type="string">
+  Nombre del contacto. Se usa como nombre visible si el contacto es creado por primera vez. Si se omite, se usa el número de teléfono como nombre. Debe ser un texto; de lo contrario la solicitud será rechazada con `400`.
 </ParamField>
 
 ## Respuesta
@@ -52,6 +56,7 @@ curl -X POST https://beta.api-iobot-desarrollo.com/chats/enviar/plantilla/busine
     "empresa_id": 1,
     "phone_number": "5215512345678",
     "plantilla_id": 12,
+    "name": "Juan Pérez",
     "parameters": [
       { "type": "text", "text": "Juan Pérez" },
       { "type": "text", "text": "Orden #9982" }
@@ -64,6 +69,20 @@ curl -X POST https://beta.api-iobot-desarrollo.com/chats/enviar/plantilla/busine
 ```json 200 Éxito
 {
   "success": true
+}
+```
+
+```json 400 Validación de campo requerido
+{
+  "success": false,
+  "error": "empresa_id es requerido y debe ser un número"
+}
+```
+
+```json 400 parameters no es un arreglo
+{
+  "success": false,
+  "error": "parameters debe ser un arreglo"
 }
 ```
 
