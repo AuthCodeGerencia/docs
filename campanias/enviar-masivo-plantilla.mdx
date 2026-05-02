@@ -59,13 +59,28 @@ Enviado como JSON.
 </ParamField>
 
 <ParamField body="paramMapping" type="object">
-  Mapeo de parámetros de la plantilla a columnas del CSV. La llave es el número de parámetro como string (`"1"`, `"2"`, ...) y el valor es el nombre de la columna en el CSV.
+  Mapeo de los parámetros dinámicos de la plantilla a columnas del CSV. La llave es el número de parámetro como string (`"1"`, `"2"`, ...) y el valor es el nombre exacto de la columna en el CSV.
 
-  Si la plantilla tiene parámetros pero no se envía `paramMapping`, los parámetros quedan vacíos.
+  El sistema resuelve cada parámetro por contacto: para cada elemento de `contacts`, lee el valor de la columna indicada y lo inyecta en el parámetro correspondiente de la plantilla. El resultado es que cada contacto recibe un mensaje personalizado.
+
+  Por ejemplo, si tu plantilla dice `Hola {{1}}, tu pedido llega a {{2}}` y envías:
 
   ```json
-  { "1": "nombre", "2": "ciudad" }
+  "paramMapping": { "1": "nombre", "2": "ciudad" }
   ```
+
+  Y `contacts` contiene:
+
+  ```json
+  [
+    { "nombre": "Juan Pérez", "numero": "5215512345678", "ciudad": "CDMX" },
+    { "nombre": "María López", "numero": "5218112345678", "ciudad": "Monterrey" }
+  ]
+  ```
+
+  Juan recibirá `Hola Juan Pérez, tu pedido llega a CDMX` y María recibirá `Hola María López, tu pedido llega a Monterrey`.
+
+  Si omites `paramMapping` o no incluyes una clave para algún parámetro, ese parámetro se envía vacío.
 </ParamField>
 
 ## Respuesta
