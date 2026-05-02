@@ -12,10 +12,7 @@
     "tabs": [
       {
         "tab": "Guides",
-        "pages": [
-          "authentication",
-          "guides/campana-masiva-csv"
-        ]
+        "pages": ["authentication"]
       },
       {
         "tab": "API reference",
