@@ -26,12 +26,6 @@
             ]
           },
           {
-            "group": "Contactos",
-            "pages": [
-              "contactos/subir-csv"
-            ]
-          },
-          {
             "group": "Campañas",
             "pages": [
               "campanias/enviar-masivo-plantilla"
