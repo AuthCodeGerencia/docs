@@ -1,10 +1,10 @@
 ---
-title: "Obtener Pasos"
-description: "Lista los pasos disponibles de un negocio para su uso en campañas"
-api: "POST /campanias/obtener/pasos"
+title: "Obtener Pasos de Ticket"
+description: "Lista los pasos de tipo ticket disponibles para un negocio"
+api: "GET /chats/obtener/pasos/tickets/{empresa_id}"
 ---
 
-Retorna todos los pasos activos de un negocio. Los pasos representan etapas de un flujo o embudo (pipeline) y se usan como valor del campo `step` al enviar una campaña masiva por plantilla.
+Retorna todos los pasos de tipo `ticket` configurados para un negocio. Usa el `id` de cualquier paso retornado como valor del campo `step` al crear una campaña masiva.
 
 ## Autenticación
 
@@ -16,73 +16,56 @@ Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenti
   App Key del negocio. Consulta [Autenticación](/authentication).
 </ParamField>
 
-## Cuerpo de la solicitud
+## Parámetros de ruta
 
-<ParamField body="empresa_id" type="number" required>
+<ParamField path="empresa_id" type="number" required>
   ID del negocio cuyos pasos deseas obtener.
 </ParamField>
 
 ## Respuesta
 
+<ResponseField name="status" type="string">
+  `"success"` cuando la consulta fue exitosa.
+</ResponseField>
+
 <ResponseField name="pasos" type="array">
-  Lista de pasos disponibles para el negocio.
+  Lista de pasos de tipo ticket del negocio.
 
   <Expandable title="Objeto de paso">
     <ResponseField name="id" type="number">ID interno del paso. Usa este valor en el campo `step` al crear una campaña.</ResponseField>
     <ResponseField name="nombre" type="string">Nombre descriptivo del paso.</ResponseField>
-    <ResponseField name="empresa_id" type="number">Negocio al que pertenece el paso.</ResponseField>
-    <ResponseField name="deleted_at" type="string | null">Marca de eliminación suave. `null` para pasos activos.</ResponseField>
+    <ResponseField name="identificador" type="string">Identificador único del paso dentro del flujo.</ResponseField>
+    <ResponseField name="contenido" type="string">Contenido o mensaje del paso.</ResponseField>
+    <ResponseField name="variable" type="string">Variable asociada al paso.</ResponseField>
+    <ResponseField name="empresa_id" type="number">ID del negocio al que pertenece el paso.</ResponseField>
   </Expandable>
 </ResponseField>
 
 <RequestExample>
 ```bash
-curl -X POST https://beta.api-iobot-desarrollo.com/campanias/obtener/pasos \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: TU_APP_KEY" \
-  -d '{
-    "empresa_id": 1
-  }'
+curl -X GET https://beta.api-iobot-desarrollo.com/chats/obtener/pasos/tickets/1 \
+  -H "x-api-key: TU_APP_KEY"
 ```
 </RequestExample>
 
 <ResponseExample>
 ```json 200
 {
+  "status": "success",
   "pasos": [
     {
       "id": 3,
-      "nombre": "Prospecto",
-      "empresa_id": 1,
-      "deleted_at": null
-    },
-    {
-      "id": 7,
-      "nombre": "Negociación",
-      "empresa_id": 1,
-      "deleted_at": null
-    },
-    {
-      "id": 12,
-      "nombre": "Cierre",
-      "empresa_id": 1,
-      "deleted_at": null
+      "nombre": "Ticket de soporte",
+      "identificador": "ticket_soporte",
+      "contenido": "Tu solicitud ha sido registrada.",
+      "variable": "ticket",
+      "empresa_id": 1
     }
   ]
 }
 ```
 
-```json 400 Parámetros inválidos
-{
-  "success": false,
-  "error": "empresa_id es requerido"
-}
-```
-
 ```json 500 Error inesperado
-{
-  "success": false,
-  "error": "Error: ..."
-}
+"Error: ..."
 ```
 </ResponseExample>
