@@ -1,0 +1,217 @@
+---
+title: "Obtener Reporte Compartido"
+description: "Estadísticas comparativas de conversaciones, ventas y cotizaciones para un grupo de empresas"
+api: "POST /empresas/data-report/multi"
+---
+
+Retorna el reporte consolidado de métricas para un rango de fechas, agrupado por empresa. Incluye conversaciones, tasas de conversión a cotización y venta, montos totales con desglose por origen (Ads Meta vs. orgánico), rendimiento por agente y desglose por anuncio de Meta (si el negocio tiene `feature_flags.ad_account_for_report` configurado).
+
+El Reporte Compartido debe estar habilitado en el negocio raíz mediante `feature_flags.aquatec_shared_report`. Si no está configurado, el endpoint retorna `400`.
+
+## Autenticación
+
+Requiere el campo `token` en el cuerpo o el encabezado `x-api-key` / `x-iobot-key`. Consulta [Autenticación](/authentication).
+
+## Cuerpo de la solicitud
+
+<ParamField body="businessId" type="number" required>
+  ID del negocio raíz que tiene habilitado el Reporte Compartido.
+</ParamField>
+
+<ParamField body="token" type="string">
+  Token de sesión del usuario (requerido si no se usa `x-api-key`).
+</ParamField>
+
+<ParamField body="startDate" type="string" required>
+  Fecha de inicio del rango en formato ISO 8601 (ej. `"2026-04-01T00:00:00.000Z"`). Filtra conversaciones, botones de registro (ventas/cotizaciones) y tickets.
+</ParamField>
+
+<ParamField body="endDate" type="string" required>
+  Fecha de fin del rango en formato ISO 8601 (ej. `"2026-04-30T23:59:59.999Z"`).
+</ParamField>
+
+<ParamField body="includeBusinesses" type="number[]">
+  IDs de empresas a incluir. Solo se incluyen IDs que pertenezcan al grupo configurado en `aquatec_shared_report`. Si se omite, se incluyen todas las empresas del grupo.
+</ParamField>
+
+## Respuesta
+
+<ResponseField name="data" type="array">
+  Lista de reportes, uno por empresa del grupo.
+
+  <Expandable title="Objeto de reporte por empresa">
+    <ResponseField name="data" type="object">Datos completos del negocio (id, nombre, img_wa, feature_flags, etc.).</ResponseField>
+    <ResponseField name="conversaciones" type="number">Total de conversaciones creadas en el período.</ResponseField>
+    <ResponseField name="salesCount" type="number">Cantidad de registros de venta cerrados.</ResponseField>
+    <ResponseField name="salesAmount" type="number">Monto total de ventas en la moneda base del negocio.</ResponseField>
+    <ResponseField name="salesConversionRate" type="number">Porcentaje de conversaciones que generaron una venta.</ResponseField>
+    <ResponseField name="quotationsCount" type="number">Cantidad de cotizaciones generadas.</ResponseField>
+    <ResponseField name="quotationsAmount" type="number">Monto total de cotizaciones en la moneda base.</ResponseField>
+    <ResponseField name="qoutationConversionRate" type="number">Porcentaje de conversaciones que generaron una cotización.</ResponseField>
+    <ResponseField name="qoutationToSalesConversionRate" type="number">Porcentaje de cotizaciones que se convirtieron en venta.</ResponseField>
+    <ResponseField name="averageTemperature" type="number">Temperatura promedio de los chats según el resumen de IA.</ResponseField>
+    <ResponseField name="averageAgentTemperature" type="number">Temperatura promedio asignada por los agentes.</ResponseField>
+    <ResponseField name="salesThatChatHasAnuncioIdCount" type="number">Cantidad de ventas provenientes de anuncios de Meta.</ResponseField>
+    <ResponseField name="salesThatChatHasAnuncioId" type="number">Monto de ventas provenientes de anuncios de Meta.</ResponseField>
+    <ResponseField name="salesThatDoesntHaveAnuncioIdCount" type="number">Cantidad de ventas orgánicas (sin anuncio de Meta).</ResponseField>
+    <ResponseField name="salesThatDoesntHaveAnuncioId" type="number">Monto de ventas orgánicas.</ResponseField>
+    <ResponseField name="quotationsThatChatHasAnuncioIdCount" type="number">Cantidad de cotizaciones provenientes de anuncios de Meta.</ResponseField>
+    <ResponseField name="quotationsThatChatHasAnuncioId" type="number">Monto de cotizaciones de Meta.</ResponseField>
+    <ResponseField name="quotationsThatChatHasAnuncioIdAndSourceIsPdfCount" type="number">Cotizaciones de Meta originadas en un PDF adjunto.</ResponseField>
+    <ResponseField name="quotationsThatChatHasAnuncioIdAndSourceIsPdf" type="number">Monto de cotizaciones de Meta originadas en PDF.</ResponseField>
+    <ResponseField name="quotationsThatChatHasAnuncioIdAndSourceIsMessageCount" type="number">Cotizaciones de Meta originadas en un mensaje del agente.</ResponseField>
+    <ResponseField name="quotationsThatChatHasAnuncioIdAndSourceIsMessage" type="number">Monto de cotizaciones de Meta originadas en mensaje.</ResponseField>
+    <ResponseField name="quotationsThatDoesntHaveAnuncioIdCount" type="number">Cantidad de cotizaciones orgánicas.</ResponseField>
+    <ResponseField name="quotationsThatDoesntHaveAnuncioId" type="number">Monto de cotizaciones orgánicas.</ResponseField>
+    <ResponseField name="quotationsThatDoesntHaveAnuncioIdAndSourceIsPdfCount" type="number">Cotizaciones orgánicas originadas en PDF.</ResponseField>
+    <ResponseField name="quotationsThatDoesntHaveAnuncioIdAndSourceIsPdf" type="number">Monto de cotizaciones orgánicas originadas en PDF.</ResponseField>
+    <ResponseField name="quotationsThatDoesntHaveAnuncioIdAndSourceIsMessageCount" type="number">Cotizaciones orgánicas originadas en mensaje.</ResponseField>
+    <ResponseField name="quotationsThatDoesntHaveAnuncioIdAndSourceIsMessage" type="number">Monto de cotizaciones orgánicas originadas en mensaje.</ResponseField>
+    <ResponseField name="tags" type="array">
+      Tags más asignados a chats en el período (de eventos `assigned_tag`).
+      <Expandable title="Objeto de tag">
+        <ResponseField name="name" type="string">Nombre del tag.</ResponseField>
+        <ResponseField name="count" type="number">Cantidad de veces que se asignó el tag.</ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="agentes" type="array">
+      Rendimiento de agentes activos con `role_id: 5` del negocio.
+      <Expandable title="Objeto de agente">
+        <ResponseField name="agente" type="string">Nombre del agente.</ResponseField>
+        <ResponseField name="totalTickets" type="number">Total de tickets en el período.</ResponseField>
+        <ResponseField name="completados" type="number">Tickets con estado `completado`.</ResponseField>
+        <ResponseField name="cancelados" type="number">Tickets con estado `cancelado`.</ResponseField>
+        <ResponseField name="pendientes" type="number">Tickets con estado `pendiente`.</ResponseField>
+        <ResponseField name="proceso" type="number">Tickets con estado `proceso`.</ResponseField>
+        <ResponseField name="conversaciones" type="number">Total de conversaciones del período para el negocio.</ResponseField>
+        <ResponseField name="ventas" type="number">Cantidad de ventas registradas por el agente.</ResponseField>
+        <ResponseField name="ventasAmount" type="number">Monto total de ventas del agente en moneda base.</ResponseField>
+        <ResponseField name="cotizaciones" type="number">Cantidad de cotizaciones registradas por el agente.</ResponseField>
+        <ResponseField name="cotizacionesAmount" type="number">Monto total de cotizaciones del agente en moneda base.</ResponseField>
+        <ResponseField name="empresa_id" type="number">ID del negocio al que pertenece el agente.</ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="adsBreakdown" type="array">
+      Desglose por anuncio de Meta. Solo se incluye si `feature_flags.ad_account_for_report` está configurado.
+      <Expandable title="Objeto de anuncio">
+        <ResponseField name="adId" type="string">ID del anuncio en Meta.</ResponseField>
+        <ResponseField name="name" type="string | null">Nombre del anuncio obtenido de Meta Ads.</ResponseField>
+        <ResponseField name="imageUrl" type="string | null">URL de la imagen o thumbnail del anuncio.</ResponseField>
+        <ResponseField name="spend" type="number | null">Gasto del anuncio en su moneda original (obtenido de Meta Ads Insights).</ResponseField>
+        <ResponseField name="currency" type="string | null">Moneda del gasto (ej. `"USD"`).</ResponseField>
+        <ResponseField name="sales" type="number | null">Cantidad de ventas atribuidas al anuncio.</ResponseField>
+        <ResponseField name="salesAmount" type="number | null">Monto de ventas atribuidas al anuncio en moneda base.</ResponseField>
+        <ResponseField name="quotations" type="number | null">Cantidad de cotizaciones atribuidas al anuncio.</ResponseField>
+        <ResponseField name="quotationsAmount" type="number | null">Monto de cotizaciones atribuidas en moneda base.</ResponseField>
+        <ResponseField name="salesRecords" type="array">Registros individuales de venta (`BotonesRegistro`) atribuidos al anuncio.</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash
+curl -X POST https://beta.api-iobot-desarrollo.com/empresas/data-report/multi \
+  -H "Content-Type: application/json" \
+  -d '{
+    "businessId": 1,
+    "token": "TU_TOKEN",
+    "startDate": "2026-04-01T00:00:00.000Z",
+    "endDate": "2026-04-30T23:59:59.999Z",
+    "includeBusinesses": [1, 2]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "data": [
+    {
+      "data": {
+        "id": 1,
+        "nombre": "Empresa Principal",
+        "img_wa": "https://example.com/logo.png",
+        "feature_flags": {
+          "currency": "HNL",
+          "currency_conversion": "USD",
+          "ad_account_for_report": 12
+        }
+      },
+      "conversaciones": 540,
+      "salesCount": 38,
+      "salesAmount": 95000,
+      "salesConversionRate": 7.04,
+      "quotationsCount": 112,
+      "quotationsAmount": 280000,
+      "qoutationConversionRate": 20.74,
+      "qoutationToSalesConversionRate": 33.93,
+      "averageTemperature": 7.2,
+      "averageAgentTemperature": 6.8,
+      "salesThatChatHasAnuncioIdCount": 25,
+      "salesThatChatHasAnuncioId": 62500,
+      "salesThatDoesntHaveAnuncioIdCount": 13,
+      "salesThatDoesntHaveAnuncioId": 32500,
+      "quotationsThatChatHasAnuncioIdCount": 70,
+      "quotationsThatChatHasAnuncioId": 175000,
+      "quotationsThatChatHasAnuncioIdAndSourceIsPdfCount": 30,
+      "quotationsThatChatHasAnuncioIdAndSourceIsPdf": 75000,
+      "quotationsThatChatHasAnuncioIdAndSourceIsMessageCount": 40,
+      "quotationsThatChatHasAnuncioIdAndSourceIsMessage": 100000,
+      "quotationsThatDoesntHaveAnuncioIdCount": 42,
+      "quotationsThatDoesntHaveAnuncioId": 105000,
+      "quotationsThatDoesntHaveAnuncioIdAndSourceIsPdfCount": 18,
+      "quotationsThatDoesntHaveAnuncioIdAndSourceIsPdf": 45000,
+      "quotationsThatDoesntHaveAnuncioIdAndSourceIsMessageCount": 24,
+      "quotationsThatDoesntHaveAnuncioIdAndSourceIsMessage": 60000,
+      "tags": [
+        { "name": "Interesado", "count": 98 },
+        { "name": "Seguimiento", "count": 54 }
+      ],
+      "agentes": [
+        {
+          "agente": "María García",
+          "totalTickets": 120,
+          "completados": 95,
+          "cancelados": 10,
+          "pendientes": 8,
+          "proceso": 7,
+          "conversaciones": 540,
+          "ventas": 15,
+          "ventasAmount": 37500,
+          "cotizaciones": 40,
+          "cotizacionesAmount": 100000,
+          "empresa_id": 1
+        }
+      ],
+      "adsBreakdown": [
+        {
+          "adId": "120201234567890",
+          "name": "Campaña Abril 2026",
+          "imageUrl": "https://example.com/ad.jpg",
+          "spend": 350.00,
+          "currency": "USD",
+          "sales": 12,
+          "salesAmount": 30000,
+          "quotations": 28,
+          "quotationsAmount": 70000,
+          "salesRecords": []
+        }
+      ]
+    }
+  ]
+}
+```
+
+```json 400
+{
+  "message": "La empresa no tiene habilitado el reporte compartido"
+}
+```
+
+```json 401
+{
+  "message": "Invalid API key"
+}
+```
+</ResponseExample>

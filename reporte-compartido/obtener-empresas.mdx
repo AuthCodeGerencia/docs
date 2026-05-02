@@ -1,0 +1,96 @@
+---
+title: "Listar Empresas del Reporte Compartido"
+description: "Obtén las empresas habilitadas en el Reporte Compartido para un negocio"
+api: "GET /empresas/data-report/multi/business"
+---
+
+Retorna las empresas activas configuradas en `feature_flags.aquatec_shared_report` del negocio solicitante. Esta lista se usa para filtrar qué empresas incluir al llamar a [Obtener Reporte Compartido](/reporte-compartido/obtener-reporte).
+
+El Reporte Compartido debe estar habilitado en el negocio. Si `aquatec_shared_report` no está configurado, el endpoint retorna `400`.
+
+## Autenticación
+
+Requiere el parámetro `token` con el token de sesión del usuario, o el encabezado `x-api-key` / `x-iobot-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
+
+## Parámetros de consulta
+
+<ParamField query="businessId" type="number" required>
+  ID del negocio raíz que tiene habilitado el Reporte Compartido.
+</ParamField>
+
+<ParamField query="token" type="string">
+  Token de sesión del usuario (requerido si no se usa `x-api-key`).
+</ParamField>
+
+## Encabezados
+
+<ParamField header="x-api-key" type="string">
+  App Key del negocio (alternativa al `token`). Consulta [Autenticación](/authentication).
+</ParamField>
+
+## Respuesta
+
+<ResponseField name="data" type="array">
+  Lista de empresas activas configuradas en el grupo del Reporte Compartido.
+
+  <Expandable title="Objeto de empresa">
+    <ResponseField name="id" type="number">ID interno del negocio.</ResponseField>
+    <ResponseField name="nombre" type="string">Nombre del negocio.</ResponseField>
+    <ResponseField name="img_wa" type="string | null">URL de la imagen del negocio en WhatsApp.</ResponseField>
+    <ResponseField name="estatus" type="boolean">Siempre `true` en esta respuesta (solo se retornan empresas activas).</ResponseField>
+    <ResponseField name="feature_flags" type="object | null">
+      Configuración de funcionalidades del negocio.
+      <Expandable title="feature_flags">
+        <ResponseField name="currency" type="string">Moneda base del negocio (ej. `"HNL"`, `"USD"`).</ResponseField>
+        <ResponseField name="currency_conversion" type="string">Moneda de conversión para el reporte.</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash
+curl -X GET "https://beta.api-iobot-desarrollo.com/empresas/data-report/multi/business?businessId=1&token=TU_TOKEN"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "data": [
+    {
+      "id": 1,
+      "nombre": "Empresa Principal",
+      "img_wa": "https://example.com/logo.png",
+      "estatus": true,
+      "feature_flags": {
+        "currency": "HNL",
+        "currency_conversion": "USD"
+      }
+    },
+    {
+      "id": 2,
+      "nombre": "Sucursal Norte",
+      "img_wa": null,
+      "estatus": true,
+      "feature_flags": {
+        "currency": "HNL",
+        "currency_conversion": "HNL"
+      }
+    }
+  ]
+}
+```
+
+```json 400
+{
+  "message": "La empresa no tiene habilitado el reporte compartido"
+}
+```
+
+```json 401
+{
+  "message": "Invalid API key"
+}
+```
+</ResponseExample>
