@@ -29,7 +29,7 @@ Enviado como JSON.
 
   ```json
   [
-    { "nombre": "Juan Pérez", "numero": "5215512345678", "ciudad": "CDMX" }
+    { "nombre": "Juan Pérez", "numero": "5215512345678", "producto": "Plan Pro" }
   ]
   ```
 </ParamField>
@@ -61,24 +61,24 @@ Enviado como JSON.
 <ParamField body="paramMapping" type="object">
   Mapeo de los parámetros dinámicos de la plantilla a campos del contacto. La llave es el número de parámetro como string (`"1"`, `"2"`, ...) y el valor es el nombre exacto del campo en el objeto de contacto.
 
-  El mapeo es por nombre de campo, no por posición. `{{1}}` resolverá al campo que especifiques en `"1"`, sin importar si es `nombre`, `numero`, o cualquier otro campo extra. `nombre` y `numero` no tienen ningún tratamiento especial: puedes mapearlos igual que cualquier otro campo.
+  El mapeo es por nombre de campo, no por posición. `{{1}}` resolverá al campo que especifiques en `"1"` — puede ser `nombre`, `numero`, o cualquier campo extra. Ningún campo tiene tratamiento especial.
 
-  Por ejemplo, si tu plantilla dice `Hola {{1}}, tu pedido llega a {{2}}` y envías:
+  Por ejemplo, si tu plantilla dice `Hola {{1}}, tu plan es {{2}}` y envías:
 
   ```json
-  "paramMapping": { "1": "nombre", "2": "ciudad" }
+  "paramMapping": { "1": "nombre", "2": "producto" }
   ```
 
   Con estos contactos:
 
   ```json
   [
-    { "nombre": "Juan Pérez", "numero": "5215512345678", "ciudad": "CDMX" },
-    { "nombre": "María López", "numero": "5218112345678", "ciudad": "Monterrey" }
+    { "nombre": "Juan Pérez", "numero": "5215512345678", "producto": "Plan Pro" },
+    { "nombre": "María López", "numero": "5218112345678", "producto": "Plan Básico" }
   ]
   ```
 
-  Juan recibirá `Hola Juan Pérez, tu pedido llega a CDMX` y María recibirá `Hola María López, tu pedido llega a Monterrey`.
+  Juan recibirá `Hola Juan Pérez, tu plan es Plan Pro` y María recibirá `Hola María López, tu plan es Plan Básico`.
 
   Si un campo referenciado no existe en el contacto, el parámetro se envía como `"unknown"`. Si omites `paramMapping`, la plantilla se envía sin parámetros.
 </ParamField>
@@ -97,8 +97,8 @@ curl -X POST https://beta.api-iobot-desarrollo.com/chats/enviar/masivo/plantilla
   -d '{
     "contacts_id": [101, 102],
     "contacts": [
-      { "nombre": "Juan Pérez", "numero": "5215512345678", "ciudad": "CDMX" },
-      { "nombre": "María López", "numero": "5218112345678", "ciudad": "Monterrey" }
+      { "nombre": "Juan Pérez", "numero": "5215512345678", "producto": "Plan Pro" },
+      { "nombre": "María López", "numero": "5218112345678", "producto": "Plan Básico" }
     ],
     "tags": [],
     "plantilla_id": 123,
@@ -106,7 +106,7 @@ curl -X POST https://beta.api-iobot-desarrollo.com/chats/enviar/masivo/plantilla
     "empresa_id": 789,
     "step": null,
     "nombre": "Campaña Mayo 2026",
-    "paramMapping": { "1": "nombre", "2": "ciudad" }
+    "paramMapping": { "1": "nombre", "2": "producto" }
   }'
 ```
 </RequestExample>
