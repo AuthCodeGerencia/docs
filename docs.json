@@ -38,6 +38,16 @@
               "reporte-compartido/obtener-empresas",
               "reporte-compartido/obtener-reporte"
             ]
+          },
+          {
+            "group": "Api-Iobot",
+            "pages": [
+              "Api-Iobot/obtener-campanias-activas",
+              "Api-Iobot/obtener-campanias-sin-insights",
+              "Api-Iobot/obtener-adsets-campania",
+              "Api-Iobot/top-tres-campanias",
+              "Api-Iobot/positividad-campanias"
+            ]
           }
         ]
       }

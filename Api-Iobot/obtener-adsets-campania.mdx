@@ -1,0 +1,134 @@
+---
+title: "Obtener Adsets de una Campaña"
+description: "Retorna los conjuntos de anuncios (adsets) y sus anuncios para una campaña de Meta Ads específica"
+api: "GET /empresas/campaigns/{businessId}/{campaignId}"
+---
+
+Retorna los adsets (conjuntos de anuncios) de una campaña de Meta Ads, incluyendo los anuncios individuales, sus métricas de gasto y la información de la campaña padre.
+
+## Autenticación
+
+Requiere el encabezado `Authorization: Bearer <token>` con el token del negocio.
+
+## Parámetros de ruta
+
+<ParamField path="businessId" type="number" required>
+  ID del negocio al que pertenece la campaña.
+</ParamField>
+
+<ParamField path="campaignId" type="string" required>
+  ID de la campaña de Meta Ads cuyos adsets se desean obtener.
+</ParamField>
+
+## Parámetros de consulta
+
+<ParamField query="datePreset" type="string" required>
+  Período predefinido. Valores aceptados: `today`, `yesterday`, `last_7d`, `last_30d`, `this_month`, `maximum`.
+</ParamField>
+
+<ParamField query="start" type="string" required>
+  Fecha de inicio en formato ISO 8601.
+</ParamField>
+
+<ParamField query="end" type="string" required>
+  Fecha de fin en formato ISO 8601.
+</ParamField>
+
+<ParamField query="accountId" type="string">
+  ID de la cuenta publicitaria de Meta.
+</ParamField>
+
+<ParamField query="token" type="string">
+  Token de acceso de Meta Ads del negocio.
+</ParamField>
+
+## Respuesta
+
+<ResponseField name="data" type="array">
+  Lista de adsets con sus anuncios.
+
+  <Expandable title="Objeto MetaAdsetWithAds">
+    <ResponseField name="id" type="string">ID del adset en Meta.</ResponseField>
+    <ResponseField name="name" type="string">Nombre del adset.</ResponseField>
+    <ResponseField name="insights" type="object">
+      Métricas de gasto del adset.
+
+      <Expandable title="insights.data[]">
+        <ResponseField name="account_currency" type="string">Moneda de la cuenta (ej. `MXN`, `USD`).</ResponseField>
+        <ResponseField name="spend" type="string">Gasto total del adset en el período.</ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="ads" type="object">
+      Anuncios dentro del adset.
+
+      <Expandable title="ads.data[] (MetaAdsetAd)">
+        <ResponseField name="id" type="string">ID del anuncio.</ResponseField>
+        <ResponseField name="name" type="string">Nombre del anuncio.</ResponseField>
+        <ResponseField name="source_ad_id" type="string">ID del anuncio fuente.</ResponseField>
+        <ResponseField name="mensajes_iniciados" type="number">Conversaciones iniciadas desde el anuncio.</ResponseField>
+        <ResponseField name="ventas" type="number">Ventas atribuidas al anuncio.</ResponseField>
+        <ResponseField name="cotizaciones" type="number">Cotizaciones atribuidas al anuncio.</ResponseField>
+        <ResponseField name="insights" type="object">Métricas de rendimiento del anuncio.</ResponseField>
+        <ResponseField name="adcreatives" type="object">Creativos del anuncio.</ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="campaign" type="object">Campaña padre del adset (objeto MetaCampaign).</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash
+curl -X GET "https://beta.api-iobot-desarrollo.com/empresas/campaigns/1/120200000000001?datePreset=last_7d&start=2026-04-25T00:00:00Z&end=2026-05-02T00:00:00Z&token=META_TOKEN" \
+  -H "Authorization: Bearer TU_TOKEN"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "data": [
+    {
+      "id": "23856000000001",
+      "name": "Adset Principal",
+      "insights": {
+        "data": [
+          {
+            "account_currency": "MXN",
+            "spend": "1250.50"
+          }
+        ]
+      },
+      "ads": {
+        "data": [
+          {
+            "id": "23856000000002",
+            "name": "Anuncio Imagen",
+            "source_ad_id": "23856000000000",
+            "mensajes_iniciados": 15,
+            "ventas": 3,
+            "cotizaciones": 7,
+            "insights": {
+              "data": []
+            },
+            "adcreatives": {}
+          }
+        ]
+      },
+      "campaign": {
+        "id": "120200000000001",
+        "name": "Campaña Verano 2026",
+        "status": "ACTIVE",
+        "lifetime_budget": "5000000",
+        "budget_remaining": "2000000"
+      }
+    }
+  ]
+}
+```
+
+```json 400 Error
+{
+  "message": "Algo salió mal"
+}
+```
+</ResponseExample>

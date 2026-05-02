@@ -1,0 +1,83 @@
+---
+title: "Obtener Campañas sin Insights"
+description: "Lista las campañas de Meta Ads de un negocio sin datos de insights detallados, con soporte de paginación"
+api: "GET /empresas/campaigns/without/insights/{businessId}"
+---
+
+Retorna las campañas de Meta Ads de un negocio excluyendo los datos de insights. Útil para cargar listas de campañas rápidamente sin el costo de obtener métricas. Soporta paginación mediante el cursor `after`.
+
+## Autenticación
+
+Requiere el encabezado `Authorization: Bearer <token>` con el token del negocio.
+
+## Parámetros de ruta
+
+<ParamField path="businessId" type="number" required>
+  ID del negocio cuyas campañas se desean listar.
+</ParamField>
+
+## Parámetros de consulta
+
+<ParamField query="after" type="string">
+  Cursor de paginación. Se obtiene del campo `after` del cursor de la respuesta anterior para cargar la siguiente página.
+</ParamField>
+
+<ParamField query="token" type="string">
+  Token de acceso de Meta Ads del negocio.
+</ParamField>
+
+## Respuesta
+
+<ResponseField name="data" type="array">
+  Lista de campañas de Meta Ads sin insights.
+
+  <Expandable title="Objeto MetaCampaign">
+    <ResponseField name="id" type="string">ID de la campaña en Meta.</ResponseField>
+    <ResponseField name="name" type="string">Nombre de la campaña.</ResponseField>
+    <ResponseField name="status" type="string">Estado de la campaña (ej. `ACTIVE`, `PAUSED`).</ResponseField>
+    <ResponseField name="lifetime_budget" type="string">Presupuesto total de vida en centavos.</ResponseField>
+    <ResponseField name="budget_remaining" type="string">Presupuesto restante en centavos.</ResponseField>
+    <ResponseField name="start_time" type="string">Fecha de inicio en formato ISO 8601.</ResponseField>
+    <ResponseField name="stop_time" type="string">Fecha de fin en formato ISO 8601.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash
+curl -X GET "https://beta.api-iobot-desarrollo.com/empresas/campaigns/without/insights/1?token=META_TOKEN" \
+  -H "Authorization: Bearer TU_TOKEN"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "data": [
+    {
+      "id": "120200000000001",
+      "name": "Campaña Verano 2026",
+      "status": "ACTIVE",
+      "lifetime_budget": "5000000",
+      "budget_remaining": "2000000",
+      "start_time": "2026-01-01T00:00:00Z",
+      "stop_time": "2026-06-30T23:59:59Z"
+    },
+    {
+      "id": "120200000000002",
+      "name": "Campaña Invierno 2026",
+      "status": "PAUSED",
+      "lifetime_budget": "3000000",
+      "budget_remaining": "3000000",
+      "start_time": "2026-07-01T00:00:00Z",
+      "stop_time": null
+    }
+  ]
+}
+```
+
+```json 400 Error
+{
+  "message": "Algo salió mal"
+}
+```
+</ResponseExample>
