@@ -1,0 +1,112 @@
+---
+title: "Subir contactos por CSV"
+description: "Carga masiva de contactos desde un archivo CSV para usar en campañas"
+api: "POST /contactos/contacts/upload-csv"
+---
+
+Recibe un archivo CSV y devuelve los contactos parseados listos para enviar una campaña masiva. No persiste los contactos hasta que se envía la campaña.
+
+## Autenticación
+
+Requiere el encabezado `Authorization: Bearer <API_TOKEN>` y el campo `token` en el cuerpo del formulario. Consulta [Autenticación](/authentication).
+
+## Encabezados
+
+<ParamField header="Authorization" type="string" required>
+  Token de autenticación en formato `Bearer <API_TOKEN>`.
+</ParamField>
+
+## Cuerpo de la solicitud
+
+Enviado como `multipart/form-data`.
+
+<ParamField body="file" type="file" required>
+  Archivo `.csv` con los contactos. Debe contener al menos las columnas `nombre` y `numero`. Cualquier columna adicional queda disponible para mapear a parámetros de plantilla.
+</ParamField>
+
+<ParamField body="empresa_id" type="string" required>
+  ID del negocio al que pertenece la carga. Enviado como string en el formulario.
+</ParamField>
+
+<ParamField body="token" type="string" required>
+  Token de autenticación del usuario.
+</ParamField>
+
+## Formato del CSV
+
+El CSV debe incluir las columnas `nombre` y `numero`. Las columnas adicionales son opcionales y pueden mapearse a los parámetros de la plantilla al enviar la campaña.
+
+```csv
+nombre,numero,ciudad,producto
+Juan Pérez,5215512345678,CDMX,Plan Pro
+María López,5218112345678,Monterrey,Plan Básico
+```
+
+## Respuesta
+
+<ResponseField name="contactos" type="ContactosExcel[]">
+  Arreglo de contactos parseados del CSV. Cada elemento tiene `nombre`, `numero` y cualquier columna adicional del archivo.
+
+  ```json
+  [
+    { "nombre": "Juan Pérez", "numero": "5215512345678", "ciudad": "CDMX" }
+  ]
+  ```
+</ResponseField>
+
+<ResponseField name="total" type="number">
+  Número total de filas procesadas del CSV.
+</ResponseField>
+
+<ResponseField name="errores" type="string[]">
+  Filas que no pudieron parsearse. Vacío si todos los registros son válidos.
+</ResponseField>
+
+<ResponseField name="masivos" type="object[]">
+  Contactos con número válido para envío masivo.
+</ResponseField>
+
+<ResponseField name="contactsWithNegativeResponses" type="object[]">
+  Contactos que previamente respondieron negativamente y serán excluidos del envío.
+</ResponseField>
+
+<RequestExample>
+```bash
+curl -X POST https://beta.api-iobot-desarrollo.com/contactos/contacts/upload-csv \
+  -H "Authorization: Bearer TU_API_TOKEN" \
+  -F "file=@contactos.csv" \
+  -F "empresa_id=789" \
+  -F "token=TU_USER_TOKEN"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Éxito
+{
+  "contactos": [
+    { "nombre": "Juan Pérez", "numero": "5215512345678", "ciudad": "CDMX" },
+    { "nombre": "María López", "numero": "5218112345678", "ciudad": "Monterrey" }
+  ],
+  "total": 2,
+  "errores": [],
+  "masivos": [
+    { "nombre": "Juan Pérez", "numero": "5215512345678" }
+  ],
+  "contactsWithNegativeResponses": []
+}
+```
+
+```json 400 Archivo inválido o faltante
+{
+  "success": false,
+  "error": "El archivo CSV es requerido"
+}
+```
+
+```json 401 Token inválido
+{
+  "success": false,
+  "error": "No autorizado"
+}
+```
+</ResponseExample>

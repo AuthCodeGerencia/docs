@@ -12,7 +12,10 @@
     "tabs": [
       {
         "tab": "Guides",
-        "pages": ["authentication"]
+        "pages": [
+          "authentication",
+          "guides/campana-masiva-csv"
+        ]
       },
       {
         "tab": "API reference",
@@ -23,6 +26,18 @@
               "chats/obtener-mensaje-plantilla",
               "chats/enviar-mensaje-plantilla-arquitectura",
               "chats/enviar-plantilla-business"
+            ]
+          },
+          {
+            "group": "Contactos",
+            "pages": [
+              "contactos/subir-csv"
+            ]
+          },
+          {
+            "group": "Campañas",
+            "pages": [
+              "campanias/enviar-masivo-plantilla"
             ]
           }
         ]

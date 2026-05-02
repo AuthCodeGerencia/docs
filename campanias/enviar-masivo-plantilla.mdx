@@ -1,0 +1,126 @@
+---
+title: "Enviar campaña masiva por plantilla"
+description: "Envía una plantilla de WhatsApp a múltiples contactos cargados desde CSV"
+api: "POST /chats/enviar/masivo/plantilla"
+---
+
+Envía una plantilla de WhatsApp a una lista de contactos provenientes de un CSV. Este endpoint recibe tanto los IDs de contactos existentes como los objetos completos del CSV, y opcionalmente mapea columnas del CSV a los parámetros dinámicos de la plantilla.
+
+## Autenticación
+
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
+
+## Encabezados
+
+<ParamField header="x-api-key" type="string" required>
+  App Key del negocio. Consulta [Autenticación](/authentication).
+</ParamField>
+
+## Cuerpo de la solicitud
+
+Enviado como JSON.
+
+<ParamField body="contacts_id" type="number[]" required>
+  Arreglo de IDs de contactos a quienes se enviará la campaña.
+</ParamField>
+
+<ParamField body="contacts" type="ContactosExcel[]" required>
+  Arreglo de contactos tal como los devuelve el endpoint de carga de CSV. Cada objeto debe tener `nombre` y `numero`, más cualquier columna adicional del CSV.
+
+  ```json
+  [
+    { "nombre": "Juan Pérez", "numero": "5215512345678", "ciudad": "CDMX" }
+  ]
+  ```
+</ParamField>
+
+<ParamField body="plantilla_id" type="number" required>
+  ID interno de la plantilla a enviar. Debe pertenecer al negocio indicado en `empresa_id`.
+</ParamField>
+
+<ParamField body="empresa_id" type="number" required>
+  ID del negocio que ejecuta la campaña.
+</ParamField>
+
+<ParamField body="user_id" type="number" required>
+  ID del usuario que lanza la campaña.
+</ParamField>
+
+<ParamField body="nombre" type="string" required>
+  Nombre identificador de la campaña.
+</ParamField>
+
+<ParamField body="tags" type="number[]">
+  Arreglo de IDs de etiquetas para clasificar los contactos de la campaña. Puede ser vacío.
+</ParamField>
+
+<ParamField body="step" type="null">
+  Reservado para uso futuro. Enviar siempre como `null`.
+</ParamField>
+
+<ParamField body="paramMapping" type="object">
+  Mapeo de parámetros de la plantilla a columnas del CSV. La llave es el número de parámetro como string (`"1"`, `"2"`, ...) y el valor es el nombre de la columna en el CSV.
+
+  Si la plantilla tiene parámetros pero no se envía `paramMapping`, los parámetros quedan vacíos.
+
+  ```json
+  { "1": "nombre", "2": "ciudad" }
+  ```
+</ParamField>
+
+## Respuesta
+
+<ResponseField name="success" type="boolean">
+  `true` cuando la campaña fue registrada y los mensajes encolados correctamente.
+</ResponseField>
+
+<RequestExample>
+```bash
+curl -X POST https://beta.api-iobot-desarrollo.com/chats/enviar/masivo/plantilla \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: TU_APP_KEY" \
+  -d '{
+    "contacts_id": [101, 102],
+    "contacts": [
+      { "nombre": "Juan Pérez", "numero": "5215512345678", "ciudad": "CDMX" },
+      { "nombre": "María López", "numero": "5218112345678", "ciudad": "Monterrey" }
+    ],
+    "tags": [],
+    "plantilla_id": 123,
+    "user_id": 456,
+    "empresa_id": 789,
+    "step": null,
+    "nombre": "Campaña Mayo 2026",
+    "paramMapping": { "1": "nombre", "2": "ciudad" }
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Éxito
+{
+  "success": true
+}
+```
+
+```json 400 Parámetros inválidos
+{
+  "success": false,
+  "error": "plantilla_id es requerido"
+}
+```
+
+```json 404 Plantilla no encontrada
+{
+  "success": false,
+  "error": "Plantilla no encontrada"
+}
+```
+
+```json 500 Error inesperado
+{
+  "success": false,
+  "error": "Error: ..."
+}
+```
+</ResponseExample>
