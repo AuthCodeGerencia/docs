@@ -35,9 +35,36 @@ Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenti
     <ResponseField name="id" type="number">ID interno del paso. Usa este valor en el campo `step` al crear una campaña.</ResponseField>
     <ResponseField name="nombre" type="string">Nombre descriptivo del paso.</ResponseField>
     <ResponseField name="identificador" type="string">Identificador único del paso dentro del flujo.</ResponseField>
+    <ResponseField name="tipo" type="string">Siempre `"ticket"` para este endpoint.</ResponseField>
     <ResponseField name="contenido" type="string">Contenido o mensaje del paso.</ResponseField>
     <ResponseField name="variable" type="string">Variable asociada al paso.</ResponseField>
+    <ResponseField name="media" type="string | null">Nombre del archivo multimedia adjunto.</ResponseField>
+    <ResponseField name="media_tipo" type="string | null">Tipo MIME del archivo multimedia.</ResponseField>
+    <ResponseField name="media_url" type="string | null">URL del archivo multimedia.</ResponseField>
+    <ResponseField name="paso_id" type="number | null">ID del paso padre en el flujo.</ResponseField>
+    <ResponseField name="descripcion" type="string | null">Descripción del paso.</ResponseField>
+    <ResponseField name="botones" type="string | null">JSON con la configuración de botones del paso.</ResponseField>
+    <ResponseField name="titulo_opciones" type="string | null">Título para el listado de opciones.</ResponseField>
+    <ResponseField name="opciones" type="string | null">JSON con las opciones disponibles del paso.</ResponseField>
+    <ResponseField name="departamento" type="number | null">ID del departamento asociado.</ResponseField>
+    <ResponseField name="inicio" type="boolean">Indica si es el paso inicial del flujo.</ResponseField>
+    <ResponseField name="catalogo_id" type="number | null">ID del catálogo asociado.</ResponseField>
     <ResponseField name="empresa_id" type="number">ID del negocio al que pertenece el paso.</ResponseField>
+    <ResponseField name="agente" type="string | null">ID del agente asignado al paso.</ResponseField>
+    <ResponseField name="paso_automatico" type="number | null">ID del paso al que avanza automáticamente.</ResponseField>
+    <ResponseField name="loop" type="boolean">Indica si el paso repite el flujo en bucle.</ResponseField>
+    <ResponseField name="ai_prompt_id" type="number | null">ID del prompt de IA asociado.</ResponseField>
+    <ResponseField name="estructura_id" type="number | null">ID de la estructura asociada.</ResponseField>
+    <ResponseField name="tags" type="string | null">Etiquetas asociadas al paso.</ResponseField>
+    <ResponseField name="maps_search" type="string | null">Texto de búsqueda para integración con mapas.</ResponseField>
+    <ResponseField name="maps_radius" type="number | null">Radio de búsqueda en metros para integración con mapas.</ResponseField>
+    <ResponseField name="helper_data" type="object | null">Datos auxiliares específicos del tipo de paso.</ResponseField>
+    <ResponseField name="iniciador" type="string | null">Configuración del iniciador del paso.</ResponseField>
+    <ResponseField name="catalogs" type="string | null">JSON con IDs de catálogos asociados.</ResponseField>
+    <ResponseField name="check_sucursal" type="boolean | null">Indica si el paso verifica sucursal.</ResponseField>
+    <ResponseField name="flow_id" type="string | null">ID del flujo de Meta asociado.</ResponseField>
+    <ResponseField name="created_at" type="string">Fecha de creación en formato ISO 8601.</ResponseField>
+    <ResponseField name="updated_at" type="string">Fecha de última actualización en formato ISO 8601.</ResponseField>
   </Expandable>
 </ResponseField>
 
@@ -57,9 +84,36 @@ curl -X GET https://beta.api-iobot-desarrollo.com/chats/obtener/pasos/tickets/1 
       "id": 3,
       "nombre": "Ticket de soporte",
       "identificador": "ticket_soporte",
+      "tipo": "ticket",
       "contenido": "Tu solicitud ha sido registrada.",
       "variable": "ticket",
-      "empresa_id": 1
+      "media": null,
+      "media_tipo": null,
+      "media_url": null,
+      "paso_id": null,
+      "descripcion": null,
+      "botones": null,
+      "titulo_opciones": null,
+      "opciones": null,
+      "departamento": null,
+      "inicio": false,
+      "catalogo_id": null,
+      "empresa_id": 1,
+      "agente": null,
+      "paso_automatico": null,
+      "loop": false,
+      "ai_prompt_id": null,
+      "estructura_id": null,
+      "tags": null,
+      "maps_search": null,
+      "maps_radius": null,
+      "helper_data": null,
+      "iniciador": null,
+      "catalogs": null,
+      "check_sucursal": false,
+      "flow_id": null,
+      "created_at": "2026-01-15T10:30:00.000Z",
+      "updated_at": "2026-01-15T10:30:00.000Z"
     }
   ]
 }
