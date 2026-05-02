@@ -54,14 +54,14 @@ Enviado como JSON.
   Arreglo de IDs de etiquetas para clasificar los contactos de la campaña. Puede ser vacío.
 </ParamField>
 
-<ParamField body="step" type="null">
-  Reservado para uso futuro. Enviar siempre como `null`.
+<ParamField body="step" type="number" required>
+  ID del paso (etapa del embudo) al que se asociará la campaña. Consulta los pasos disponibles con [Obtener Pasos](/campanias/obtener-pasos).
 </ParamField>
 
 <ParamField body="paramMapping" type="object">
-  Mapeo de los parámetros dinámicos de la plantilla a campos del contacto. La llave es el número de parámetro como string (`"1"`, `"2"`, ...) y el valor es el nombre exacto del campo en el objeto de contacto.
+  Mapeo de los parámetros dinámicos de la plantilla a campos del contacto. La llave corresponde al número de placeholder en la plantilla (`"1"` → `{{1}}`, `"2"` → `{{2}}`, ...) y el valor es el nombre del campo del contacto del que se leerá el valor.
 
-  El mapeo es por nombre de campo, no por posición. `{{1}}` resolverá al campo que especifiques en `"1"` — puede ser `nombre`, `numero`, o cualquier campo extra. Ningún campo tiene tratamiento especial.
+  Es decir: `"2": "producto"` significa "para el placeholder `{{2}}` de la plantilla, usa el valor del campo `producto` de cada contacto". Los números de las llaves no tienen relación con el orden de los campos del contacto.
 
   Por ejemplo, si tu plantilla dice `Hola {{1}}, tu plan es {{2}}` y envías:
 
@@ -104,7 +104,7 @@ curl -X POST https://beta.api-iobot-desarrollo.com/chats/enviar/masivo/plantilla
     "plantilla_id": 123,
     "user_id": 456,
     "empresa_id": 789,
-    "step": null,
+    "step": 3,
     "nombre": "Campaña Mayo 2026",
     "paramMapping": { "1": "nombre", "2": "producto" }
   }'

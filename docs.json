@@ -28,6 +28,7 @@
           {
             "group": "Campañas",
             "pages": [
+              "campanias/obtener-pasos",
               "campanias/enviar-masivo-plantilla"
             ]
           }
