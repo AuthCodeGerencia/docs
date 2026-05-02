@@ -1,10 +1,10 @@
 ---
 title: "Enviar campaña masiva por plantilla"
-description: "Envía una plantilla de WhatsApp a múltiples contactos cargados desde CSV"
+description: "Envía una plantilla de WhatsApp a múltiples contactos"
 api: "POST /chats/enviar/masivo/plantilla"
 ---
 
-Envía una plantilla de WhatsApp a una lista de contactos provenientes de un CSV. Este endpoint recibe tanto los IDs de contactos existentes como los objetos completos del CSV, y opcionalmente mapea columnas del CSV a los parámetros dinámicos de la plantilla.
+Envía una plantilla de WhatsApp a una lista de contactos. Opcionalmente mapea campos de cada contacto a los parámetros dinámicos de la plantilla para personalizar cada mensaje.
 
 ## Autenticación
 
@@ -24,8 +24,8 @@ Enviado como JSON.
   Arreglo de IDs de contactos a quienes se enviará la campaña.
 </ParamField>
 
-<ParamField body="contacts" type="ContactosExcel[]" required>
-  Arreglo de contactos tal como los devuelve el endpoint de carga de CSV. Cada objeto debe tener `nombre` y `numero`, más cualquier columna adicional del CSV.
+<ParamField body="contacts" type="object[]" required>
+  Arreglo de contactos. Cada objeto debe tener `nombre` y `numero` como campos obligatorios. Puedes incluir cualquier campo adicional y referenciarlo en `paramMapping`.
 
   ```json
   [
@@ -59,9 +59,9 @@ Enviado como JSON.
 </ParamField>
 
 <ParamField body="paramMapping" type="object">
-  Mapeo de los parámetros dinámicos de la plantilla a columnas del CSV. La llave es el número de parámetro como string (`"1"`, `"2"`, ...) y el valor es el nombre exacto de la columna en el CSV.
+  Mapeo de los parámetros dinámicos de la plantilla a campos del contacto. La llave es el número de parámetro como string (`"1"`, `"2"`, ...) y el valor es el nombre exacto del campo en el objeto de contacto.
 
-  El sistema resuelve cada parámetro por contacto: para cada elemento de `contacts`, lee el valor de la columna indicada y lo inyecta en el parámetro correspondiente de la plantilla. El resultado es que cada contacto recibe un mensaje personalizado.
+  El mapeo es por nombre de campo, no por posición. `{{1}}` resolverá al campo que especifiques en `"1"`, sin importar si es `nombre`, `numero`, o cualquier otro campo extra. `nombre` y `numero` no tienen ningún tratamiento especial: puedes mapearlos igual que cualquier otro campo.
 
   Por ejemplo, si tu plantilla dice `Hola {{1}}, tu pedido llega a {{2}}` y envías:
 
@@ -69,7 +69,7 @@ Enviado como JSON.
   "paramMapping": { "1": "nombre", "2": "ciudad" }
   ```
 
-  Y `contacts` contiene:
+  Con estos contactos:
 
   ```json
   [
@@ -80,7 +80,7 @@ Enviado como JSON.
 
   Juan recibirá `Hola Juan Pérez, tu pedido llega a CDMX` y María recibirá `Hola María López, tu pedido llega a Monterrey`.
 
-  Si omites `paramMapping` o no incluyes una clave para algún parámetro, ese parámetro se envía vacío.
+  Si un campo referenciado no existe en el contacto, el parámetro se envía como `"unknown"`. Si omites `paramMapping`, la plantilla se envía sin parámetros.
 </ParamField>
 
 ## Respuesta
