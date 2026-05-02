@@ -1,0 +1,61 @@
+---
+title: "Obtener Cuentas Publicitarias"
+description: "Retorna las cuentas publicitarias de Meta Ads vinculadas a un negocio"
+api: "GET /api-cloud/ad_accounts"
+---
+
+Retorna la lista de cuentas publicitarias de Meta Ads disponibles para el negocio. Usa el `id` de la cuenta retornada como valor del parámetro `accountId` en los endpoints de campañas.
+
+## Autenticación
+
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
+
+## Parámetros de consulta
+
+<ParamField query="businessId" type="number" required>
+  ID del negocio cuyas cuentas publicitarias se desean obtener.
+</ParamField>
+
+## Respuesta
+
+<ResponseField name="data" type="array">
+  Lista de cuentas publicitarias vinculadas al negocio.
+
+  <Expandable title="Objeto de cuenta publicitaria">
+    <ResponseField name="id" type="string">ID de la cuenta publicitaria en Meta. Úsalo como `accountId` en los endpoints de campañas.</ResponseField>
+    <ResponseField name="name" type="string">Nombre de la cuenta publicitaria.</ResponseField>
+    <ResponseField name="internalId" type="number">ID interno de la cuenta en Iobot.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash
+curl -X GET "https://beta.api-iobot-desarrollo.com/api-cloud/ad_accounts?businessId=1" \
+  -H "x-api-key: TU_APP_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "data": [
+    {
+      "id": "act_123456789",
+      "name": "Cuenta Principal",
+      "internalId": 42
+    },
+    {
+      "id": "act_987654321",
+      "name": "Cuenta Secundaria",
+      "internalId": 43
+    }
+  ]
+}
+```
+
+```json 400 Error
+{
+  "message": "No se encontró el token"
+}
+```
+</ResponseExample>

@@ -4,11 +4,11 @@ description: "Retorna los conjuntos de anuncios (adsets) y sus anuncios para una
 api: "GET /empresas/campaigns/{businessId}/{campaignId}"
 ---
 
-Retorna los adsets (conjuntos de anuncios) de una campaña de Meta Ads, incluyendo los anuncios individuales, sus métricas de gasto y la información de la campaña padre.
+Retorna los adsets (conjuntos de anuncios) de una campaña de Meta Ads, incluyendo los anuncios individuales con sus métricas de mensajes iniciados, ventas y cotizaciones.
 
 ## Autenticación
 
-Requiere el encabezado `Authorization: Bearer <token>` con el token del negocio.
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
 
 ## Parámetros de ruta
 
@@ -22,24 +22,20 @@ Requiere el encabezado `Authorization: Bearer <token>` con el token del negocio.
 
 ## Parámetros de consulta
 
-<ParamField query="datePreset" type="string" required>
-  Período predefinido. Valores aceptados: `today`, `yesterday`, `last_7d`, `last_30d`, `this_month`, `maximum`.
-</ParamField>
-
-<ParamField query="start" type="string" required>
-  Fecha de inicio en formato ISO 8601.
-</ParamField>
-
-<ParamField query="end" type="string" required>
-  Fecha de fin en formato ISO 8601.
+<ParamField query="datePreset" type="string">
+  Período predefinido para las métricas de Meta. Valores aceptados: `today`, `yesterday`, `last_7d`, `last_30d`, `this_month`, `maximum`. Por defecto `today`.
 </ParamField>
 
 <ParamField query="accountId" type="string">
-  ID de la cuenta publicitaria de Meta.
+  ID de la cuenta publicitaria de Meta. Si se omite, se usa la cuenta predeterminada del negocio.
 </ParamField>
 
-<ParamField query="token" type="string">
-  Token de acceso de Meta Ads del negocio.
+<ParamField query="start" type="string">
+  Fecha de inicio en formato ISO 8601. Usada para filtrar métricas de mensajes, ventas y cotizaciones.
+</ParamField>
+
+<ParamField query="end" type="string">
+  Fecha de fin en formato ISO 8601. Usada para filtrar métricas de mensajes, ventas y cotizaciones.
 </ParamField>
 
 ## Respuesta
@@ -78,8 +74,8 @@ Requiere el encabezado `Authorization: Bearer <token>` con el token del negocio.
 
 <RequestExample>
 ```bash
-curl -X GET "https://beta.api-iobot-desarrollo.com/empresas/campaigns/1/120200000000001?datePreset=last_7d&start=2026-04-25T00:00:00Z&end=2026-05-02T00:00:00Z&token=META_TOKEN" \
-  -H "Authorization: Bearer TU_TOKEN"
+curl -X GET "https://beta.api-iobot-desarrollo.com/empresas/campaigns/1/120200000000001?datePreset=last_7d&start=2026-04-25T00:00:00Z&end=2026-05-02T00:00:00Z" \
+  -H "x-api-key: TU_APP_KEY"
 ```
 </RequestExample>
 
@@ -107,9 +103,7 @@ curl -X GET "https://beta.api-iobot-desarrollo.com/empresas/campaigns/1/12020000
             "mensajes_iniciados": 15,
             "ventas": 3,
             "cotizaciones": 7,
-            "insights": {
-              "data": []
-            },
+            "insights": { "data": [] },
             "adcreatives": {}
           }
         ]
@@ -128,7 +122,7 @@ curl -X GET "https://beta.api-iobot-desarrollo.com/empresas/campaigns/1/12020000
 
 ```json 400 Error
 {
-  "message": "Algo salió mal"
+  "message": "Missing token"
 }
 ```
 </ResponseExample>

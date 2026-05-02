@@ -40,13 +40,12 @@
             ]
           },
           {
-            "group": "Api-Iobot",
+            "group": "Campañas Meta",
             "pages": [
-              "Api-Iobot/obtener-campanias-activas",
-              "Api-Iobot/obtener-campanias-sin-insights",
-              "Api-Iobot/obtener-adsets-campania",
-              "Api-Iobot/top-tres-campanias",
-              "Api-Iobot/positividad-campanias"
+              "Campañas meta/obtener-cuentas-publicitarias",
+              "Campañas meta/obtener-campanias-activas",
+              "Campañas meta/obtener-campanias-sin-insights",
+              "Campañas meta/obtener-adsets-campania"
             ]
           }
         ]

@@ -4,11 +4,11 @@ description: "Retorna las campañas de Meta Ads de un negocio con sus métricas 
 api: "GET /empresas/campaigns/{businessId}"
 ---
 
-Retorna las campañas de Meta Ads vinculadas a un negocio, junto con totales de gasto (`spend`), ventas (`sales`) y cotizaciones (`cotizaciones`) para el período solicitado.
+Retorna las campañas de Meta Ads vinculadas a un negocio, junto con totales de gasto (`totalSpend`), ventas (`totalSales`) y cotizaciones (`totalQuotations`) para el período solicitado. Solo retorna campañas que tengan al menos un anuncio con gasto, ventas o cotizaciones.
 
 ## Autenticación
 
-Requiere el encabezado `Authorization: Bearer <token>` con el token del negocio.
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
 
 ## Parámetros de ruta
 
@@ -22,24 +22,20 @@ Requiere el encabezado `Authorization: Bearer <token>` con el token del negocio.
   Período predefinido. Valores aceptados: `today`, `yesterday`, `last_7d`, `last_30d`, `this_month`, `maximum`.
 </ParamField>
 
+<ParamField query="accountId" type="string" required>
+  ID de la cuenta publicitaria de Meta. Obténlo desde [Obtener Cuentas Publicitarias](/Campañas meta/obtener-cuentas-publicitarias).
+</ParamField>
+
 <ParamField query="start" type="string">
-  Fecha de inicio en formato ISO 8601. Se ignora si `datePreset` resuelve un rango automático.
+  Fecha de inicio en formato ISO 8601. Usada para filtrar ventas y cotizaciones.
 </ParamField>
 
 <ParamField query="end" type="string">
-  Fecha de fin en formato ISO 8601.
-</ParamField>
-
-<ParamField query="accountId" type="string">
-  ID de la cuenta publicitaria de Meta. Si se omite, se usa la cuenta predeterminada del negocio.
+  Fecha de fin en formato ISO 8601. Usada para filtrar ventas y cotizaciones.
 </ParamField>
 
 <ParamField query="showOnlyActives" type="boolean">
   Si es `true`, filtra y devuelve solo las campañas con estado activo. Por defecto `false`.
-</ParamField>
-
-<ParamField query="token" type="string">
-  Token de acceso de Meta Ads del negocio.
 </ParamField>
 
 ## Respuesta
@@ -55,6 +51,7 @@ Requiere el encabezado `Authorization: Bearer <token>` con el token del negocio.
     <ResponseField name="budget_remaining" type="string">Presupuesto restante en centavos.</ResponseField>
     <ResponseField name="start_time" type="string">Fecha de inicio en formato ISO 8601.</ResponseField>
     <ResponseField name="stop_time" type="string">Fecha de fin en formato ISO 8601.</ResponseField>
+    <ResponseField name="sales_totales" type="number">Total de ventas de todos los anuncios de la campaña.</ResponseField>
     <ResponseField name="insights" type="object">Métricas de rendimiento de la campaña.</ResponseField>
     <ResponseField name="ads" type="object">Anuncios asociados a la campaña.</ResponseField>
   </Expandable>
@@ -72,10 +69,14 @@ Requiere el encabezado `Authorization: Bearer <token>` con el token del negocio.
   Total de cotizaciones generadas en el período.
 </ResponseField>
 
+<ResponseField name="next" type="string | null">
+  Cursor de paginación para obtener la siguiente página de campañas. `null` si no hay más resultados.
+</ResponseField>
+
 <RequestExample>
 ```bash
-curl -X GET "https://beta.api-iobot-desarrollo.com/empresas/campaigns/1?datePreset=last_7d&showOnlyActives=false&token=META_TOKEN" \
-  -H "Authorization: Bearer TU_TOKEN"
+curl -X GET "https://beta.api-iobot-desarrollo.com/empresas/campaigns/1?datePreset=last_7d&accountId=act_123456789&showOnlyActives=false" \
+  -H "x-api-key: TU_APP_KEY"
 ```
 </RequestExample>
 
@@ -91,23 +92,21 @@ curl -X GET "https://beta.api-iobot-desarrollo.com/empresas/campaigns/1?datePres
       "budget_remaining": "2000000",
       "start_time": "2026-01-01T00:00:00Z",
       "stop_time": "2026-06-30T23:59:59Z",
-      "insights": {
-        "data": []
-      },
-      "ads": {
-        "data": []
-      }
+      "sales_totales": 5,
+      "insights": { "data": [] },
+      "ads": { "data": [] }
     }
   ],
   "totalSales": 42,
   "totalSpend": 1500.75,
-  "totalQuotations": 18
+  "totalQuotations": 18,
+  "next": null
 }
 ```
 
 ```json 400 Error
 {
-  "message": "Algo salió mal"
+  "message": "No se encontró una empresa con ese id"
 }
 ```
 </ResponseExample>

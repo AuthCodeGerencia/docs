@@ -4,11 +4,11 @@ description: "Lista las campañas de Meta Ads de un negocio sin datos de insight
 api: "GET /empresas/campaigns/without/insights/{businessId}"
 ---
 
-Retorna las campañas de Meta Ads de un negocio excluyendo los datos de insights. Útil para cargar listas de campañas rápidamente sin el costo de obtener métricas. Soporta paginación mediante el cursor `after`.
+Retorna las campañas de Meta Ads de un negocio excluyendo los datos de insights. Útil para cargar listas de campañas rápidamente. Soporta paginación mediante el cursor `next`.
 
 ## Autenticación
 
-Requiere el encabezado `Authorization: Bearer <token>` con el token del negocio.
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
 
 ## Parámetros de ruta
 
@@ -19,11 +19,7 @@ Requiere el encabezado `Authorization: Bearer <token>` con el token del negocio.
 ## Parámetros de consulta
 
 <ParamField query="after" type="string">
-  Cursor de paginación. Se obtiene del campo `after` del cursor de la respuesta anterior para cargar la siguiente página.
-</ParamField>
-
-<ParamField query="token" type="string">
-  Token de acceso de Meta Ads del negocio.
+  Cursor de paginación. Usa el valor de `next` de la respuesta anterior para cargar la siguiente página.
 </ParamField>
 
 ## Respuesta
@@ -42,10 +38,14 @@ Requiere el encabezado `Authorization: Bearer <token>` con el token del negocio.
   </Expandable>
 </ResponseField>
 
+<ResponseField name="next" type="string | null">
+  Cursor de paginación para obtener la siguiente página. `null` si no hay más resultados.
+</ResponseField>
+
 <RequestExample>
 ```bash
-curl -X GET "https://beta.api-iobot-desarrollo.com/empresas/campaigns/without/insights/1?token=META_TOKEN" \
-  -H "Authorization: Bearer TU_TOKEN"
+curl -X GET "https://beta.api-iobot-desarrollo.com/empresas/campaigns/without/insights/1" \
+  -H "x-api-key: TU_APP_KEY"
 ```
 </RequestExample>
 
@@ -61,23 +61,15 @@ curl -X GET "https://beta.api-iobot-desarrollo.com/empresas/campaigns/without/in
       "budget_remaining": "2000000",
       "start_time": "2026-01-01T00:00:00Z",
       "stop_time": "2026-06-30T23:59:59Z"
-    },
-    {
-      "id": "120200000000002",
-      "name": "Campaña Invierno 2026",
-      "status": "PAUSED",
-      "lifetime_budget": "3000000",
-      "budget_remaining": "3000000",
-      "start_time": "2026-07-01T00:00:00Z",
-      "stop_time": null
     }
-  ]
+  ],
+  "next": null
 }
 ```
 
 ```json 400 Error
 {
-  "message": "Algo salió mal"
+  "message": "Missing token"
 }
 ```
 </ResponseExample>
