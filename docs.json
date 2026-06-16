@@ -22,7 +22,8 @@
             "pages": [
               "chats/obtener-mensaje-plantilla",
               "chats/enviar-mensaje-plantilla-arquitectura",
-              "chats/enviar-plantilla-business"
+              "chats/enviar-plantilla-business",
+              "chats/crear-ticket-business"
             ]
           },
           {
