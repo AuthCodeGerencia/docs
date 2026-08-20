@@ -23,7 +23,8 @@
               "chats/obtener-mensaje-plantilla",
               "chats/enviar-mensaje-plantilla-arquitectura",
               "chats/enviar-plantilla-business",
-              "chats/crear-ticket-business"
+              "chats/crear-ticket-business",
+              "chats/obtener-informacion-numero"
             ]
           },
           {

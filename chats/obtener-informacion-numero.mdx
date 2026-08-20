@@ -1,0 +1,176 @@
+---
+title: "Obtener Información de Número Telefónico"
+description: "Consulta el resumen de un contacto de Iobot a partir de su número de teléfono"
+api: "POST /chats/obtener/informacion/numero"
+---
+
+Retorna un resumen consolidado de un contacto a partir de su número de WhatsApp: la última actividad del chat, el nombre registrado, la cantidad de tickets y los registros vinculados (cotizaciones, ventas y órdenes de ecommerce).
+
+Útil para integraciones de CRM que necesitan conocer el historial de un número antes de iniciar una conversación o escalar un ticket.
+
+## Autenticación
+
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
+
+## Encabezados
+
+<ParamField header="x-api-key" type="string" required>
+  App Key del negocio. Consulta [Autenticación](/authentication).
+</ParamField>
+
+## Cuerpo de la solicitud
+
+<ParamField body="phone_number" type="string" required>
+  Número de WhatsApp del contacto. Se aceptan formatos con o sin caracteres especiales (guiones, espacios, `+`) — el sistema extrae solo los dígitos. Ejemplo: `+504 9489-8989` o `50494898989`.
+</ParamField>
+
+<ParamField body="empresa_id" type="number">
+  ID del negocio en el que se busca el número. Se infiere automáticamente del App Key enviado en `x-api-key`, por lo que normalmente puede omitirse.
+</ParamField>
+
+## Comportamiento
+
+- La búsqueda se hace sobre el número de contacto **normalizado a dígitos**. Si el contacto no existe en Iobot, la respuesta es `404`.
+- Si el contacto existe pero no tiene chat en el negocio consultado, la respuesta también es `404`.
+- Cuando un contacto tiene más de un chat en el negocio, se toma el **más reciente** según `ultimo_mensaje`.
+- Las cotizaciones y las ventas provienen de los registros de movimientos del chat. Se devuelven tanto la cantidad de registros como la suma de sus montos.
+
+## Respuesta
+
+<ResponseField name="success" type="boolean">
+  `true` cuando la solicitud se procesó correctamente.
+</ResponseField>
+
+<ResponseField name="chat_id" type="number">
+  ID del chat asociado al número dentro del negocio.
+</ResponseField>
+
+<ResponseField name="ultima_vez" type="string">
+  Fecha y hora del último mensaje del chat, en formato ISO 8601.
+</ResponseField>
+
+<ResponseField name="nombre_chat" type="string">
+  Nombre del contacto registrado en Iobot. Si el contacto nunca fue nombrado, se retorna el número de teléfono.
+</ResponseField>
+
+<ResponseField name="cantidad_tickets" type="number">
+  Total de tickets asociados al chat.
+</ResponseField>
+
+<ResponseField name="cotizaciones_vinculadas" type="number">
+  Cantidad de cotizaciones registradas en el chat.
+</ResponseField>
+
+<ResponseField name="monto_cotizaciones" type="number">
+  Suma de los montos de las cotizaciones registradas en el chat.
+</ResponseField>
+
+<ResponseField name="ventas_vinculadas" type="number">
+  Cantidad de ventas registradas en el chat.
+</ResponseField>
+
+<ResponseField name="monto_ventas" type="number">
+  Suma de los montos de las ventas registradas en el chat.
+</ResponseField>
+
+<ResponseField name="ecommerce_vinculado" type="number">
+  Cantidad de órdenes de ecommerce vinculadas al chat.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://beta.api-iobot-desarrollo.com/chats/obtener/informacion/numero \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: TU_APP_KEY" \
+  -d '{
+    "phone_number": "50433506220"
+  }'
+```
+
+```text Postman
+Método:  POST
+URL:     https://beta.api-iobot-desarrollo.com/chats/obtener/informacion/numero
+
+Headers
+  Content-Type    application/json
+  x-api-key       TU_APP_KEY
+
+Body
+{
+  "phone_number": "50433506220"
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Éxito
+{
+  "success": true,
+  "chat_id": 9982,
+  "ultima_vez": "2026-08-19T14:32:08.000Z",
+  "nombre_chat": "Juan Pérez",
+  "cantidad_tickets": 12,
+  "cotizaciones_vinculadas": 3,
+  "monto_cotizaciones": 15400.5,
+  "ventas_vinculadas": 1,
+  "monto_ventas": 8200,
+  "ecommerce_vinculado": 2
+}
+```
+
+```json 200 Contacto sin movimientos
+{
+  "success": true,
+  "chat_id": 10233,
+  "ultima_vez": "2026-08-20T09:11:44.000Z",
+  "nombre_chat": "50494898989",
+  "cantidad_tickets": 0,
+  "cotizaciones_vinculadas": 0,
+  "monto_cotizaciones": 0,
+  "ventas_vinculadas": 0,
+  "monto_ventas": 0,
+  "ecommerce_vinculado": 0
+}
+```
+
+```json 400 Número no enviado
+{
+  "success": false,
+  "error": "phone_number es requerido"
+}
+```
+
+```json 400 Empresa no resuelta
+{
+  "success": false,
+  "error": "empresa_id es requerido y debe ser un número"
+}
+```
+
+```json 401 App Key inválido
+{
+  "message": "Invalid API key"
+}
+```
+
+```json 404 Contacto no encontrado
+{
+  "success": false,
+  "error": "Contacto no encontrado"
+}
+```
+
+```json 404 Chat no encontrado
+{
+  "success": false,
+  "error": "Chat no encontrado"
+}
+```
+
+```json 500 Error inesperado
+{
+  "success": false,
+  "error": "Error: ..."
+}
+```
+</ResponseExample>
