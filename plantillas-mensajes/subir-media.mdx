@@ -1,0 +1,91 @@
+---
+title: "Subir Media"
+description: "Sube un archivo (imagen, video o documento) y obtén una URL pública para usarla como media_url al enviar una plantilla"
+api: "POST /chats/subir/media/plantilla"
+---
+
+Sube un archivo a almacenamiento y devuelve una URL pública lista para usarse en el campo `media_url` de [Enviar Plantilla](/plantillas-mensajes/enviar-plantilla).
+
+Existe porque `media_url` exige una URL `https://` accesible por los servidores de Meta — una imagen en tu disco local o en un servidor privado no sirve. Este endpoint es el paso previo: subes el archivo una vez, obtienes la URL, y la reutilizas en cuantos envíos necesites.
+
+## Autenticación
+
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
+
+## Encabezados
+
+<ParamField header="x-api-key" type="string" required>
+  App Key del negocio. Consulta [Autenticación](/authentication).
+</ParamField>
+
+## Cuerpo de la solicitud
+
+Este endpoint recibe `multipart/form-data`, no JSON.
+
+<ParamField body="file" type="file" required>
+  El archivo a subir. Tipos aceptados: `image/jpeg`, `image/jpg`, `image/png`, `video/mp4`, `application/pdf` — los mismos que soporta un encabezado de plantilla de WhatsApp. Cualquier otro tipo se rechaza con `400`.
+</ParamField>
+
+## Respuesta
+
+<ResponseField name="success" type="boolean">
+  `true` cuando el archivo se subió correctamente.
+</ResponseField>
+
+<ResponseField name="media_url" type="string">
+  URL pública `https://` del archivo. Pásala directamente en `media_url` al [enviar la plantilla](/plantillas-mensajes/enviar-plantilla).
+</ResponseField>
+
+<ResponseField name="filename" type="string">
+  Nombre interno con el que se guardó el archivo.
+</ResponseField>
+
+<RequestExample>
+```bash
+curl -X POST https://beta.api-iobot-desarrollo.com/chats/subir/media/plantilla \
+  -H "x-api-key: TU_APP_KEY" \
+  -F "file=@/ruta/local/imagen.jpg"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Éxito
+{
+  "success": true,
+  "media_url": "https://beta.api-iobot-desarrollo.com/obtener/documento/file-2026-08-26T10-15-00-000Z-123456.jpg",
+  "filename": "file-2026-08-26T10-15-00-000Z-123456.jpg"
+}
+```
+
+```json 400 Archivo faltante
+{
+  "success": false,
+  "error": "El archivo es requerido"
+}
+```
+
+```json 400 Tipo no soportado
+{
+  "success": false,
+  "error": "El tipo de archivo image/gif no es soportado por la API de WhatsApp Business. Los tipos soportados son: application/pdf, image/jpeg, image/jpg, image/png, video/mp4"
+}
+```
+
+```json 500 Error inesperado
+{
+  "success": false,
+  "error": "Error: ..."
+}
+```
+</ResponseExample>
+
+## Errores comunes
+
+| Estado | Error | Causa |
+|---|---|---|
+| `400` | `El archivo es requerido` | No se envió el campo `file` |
+| `400` | `El tipo de archivo ... no es soportado ...` | El `mimetype` del archivo no está en la lista aceptada |
+
+<Note>
+  La URL devuelta es permanente: el archivo no se borra automáticamente y puede reutilizarse en múltiples envíos de `media_url`.
+</Note>

@@ -26,8 +26,6 @@ Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenti
 
 <ParamField body="usuario_id" type="number" required>
   ID del usuario en cuyo nombre se consulta. Debe pertenecer a `empresa_id`.
-
-  Determina el filtrado: si el usuario tiene rol de **agente** (`role_id: 5`), solo se devuelven las plantillas cuyo `agentes_permitidos` incluya su ID. Para cualquier otro rol se devuelven todas las plantillas visibles de la empresa.
 </ParamField>
 
 <Warning>
