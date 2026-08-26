@@ -1,0 +1,238 @@
+---
+title: "Listar Plantillas"
+description: "Obtén todas las plantillas de WhatsApp de una empresa, con sus IDs y su estructura completa"
+api: "POST /chats/obtener/mensaje/plantilla"
+---
+
+Retorna todas las plantillas de WhatsApp activas y visibles de una empresa. Cada plantilla incluye su **`id` interno** — el valor que necesitas para [enviarla](/plantillas-mensajes/enviar-plantilla) — junto con su estructura completa (`template`, `descripcion`, `botones`), que te permite saber **cuántos parámetros exige** antes de enviarla.
+
+El estado de aprobación (`state`) se resuelve en tiempo real contra la API de Meta, cruzando `id_plantilla` con el nombre de la plantilla registrada en el WABA de la empresa.
+
+## Autenticación
+
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
+
+## Encabezados
+
+<ParamField header="x-api-key" type="string" required>
+  App Key del negocio. Consulta [Autenticación](/authentication).
+</ParamField>
+
+## Cuerpo de la solicitud
+
+<ParamField body="empresa_id" type="number" required>
+  ID del negocio cuyas plantillas deseas obtener.
+</ParamField>
+
+<ParamField body="usuario_id" type="number" required>
+  ID del usuario en cuyo nombre se consulta. Debe pertenecer a `empresa_id`.
+
+  Determina el filtrado: si el usuario tiene rol de **agente** (`role_id: 5`), solo se devuelven las plantillas cuyo `agentes_permitidos` incluya su ID. Para cualquier otro rol se devuelven todas las plantillas visibles de la empresa.
+</ParamField>
+
+<Warning>
+  Si `usuario_id` no corresponde a un usuario de `empresa_id`, la solicitud falla con `500`. Verifica el ID antes de llamar.
+</Warning>
+
+## Filtros aplicados
+
+Siempre se excluyen las plantillas que cumplan alguna de estas condiciones:
+
+| Condición | Efecto |
+|---|---|
+| `visible: false` | La plantilla está oculta y no se devuelve |
+| `deleted_at` distinto de `null` | Eliminación suave: no se devuelve |
+| Rol agente sin ID en `agentes_permitidos` | No se devuelve para ese usuario |
+
+## Respuesta
+
+<ResponseField name="plantillas" type="array">
+  Lista de plantillas disponibles.
+
+  <Expandable title="Objeto de plantilla">
+    <ResponseField name="id" type="number">
+      **ID interno de la plantilla.** Es el valor que se envía como `plantilla_id` en [Enviar Plantilla](/plantillas-mensajes/enviar-plantilla).
+    </ResponseField>
+    <ResponseField name="nombre" type="string">
+      Nombre legible de la plantilla, tal como se muestra en el panel.
+    </ResponseField>
+    <ResponseField name="id_plantilla" type="string">
+      Nombre de la plantilla registrado en Meta. Se usa para cruzar el estado de aprobación.
+    </ResponseField>
+    <ResponseField name="descripcion" type="string">
+      Texto del cuerpo de la plantilla. Contiene los marcadores de posición (`{{1}}`, `{{2}}`, …) que se sustituyen con `parameters` al enviar.
+    </ResponseField>
+    <ResponseField name="template" type="object | null">
+      Estructura completa de la plantilla en formato Meta, con el arreglo `components` (`HEADER`, `BODY`, `FOOTER`, `BUTTONS`). Es la fuente autoritativa para determinar cuántos parámetros requiere la plantilla.
+    </ResponseField>
+    <ResponseField name="botones" type="string | null">
+      Configuración de botones asociada a la plantilla.
+    </ResponseField>
+    <ResponseField name="codigo" type="string | null">
+      Código interno opcional de la plantilla.
+    </ResponseField>
+    <ResponseField name="archivo_nombre" type="string | null">
+      Nombre del archivo multimedia adjunto en el encabezado, si la plantilla tiene uno.
+    </ResponseField>
+    <ResponseField name="type" type="string | null">
+      Tipo de contenido del encabezado (por ejemplo `TEXT`, `IMAGE`, `DOCUMENT`, `VIDEO`).
+    </ResponseField>
+    <ResponseField name="tipo" type="string">
+      Proveedor de la plantilla. Valores posibles: `Cloud` (WhatsApp Cloud API) o `GupShup`.
+    </ResponseField>
+    <ResponseField name="agentes_permitidos" type="string | null">
+      IDs de agentes separados por coma que pueden usar esta plantilla. Vacío o `null` significa que no está restringida por agente.
+    </ResponseField>
+    <ResponseField name="contacto_variables" type="number[] | null">
+      Índices de parámetros que se autocompletan con datos del contacto en lugar de valores manuales.
+    </ResponseField>
+    <ResponseField name="articles" type="string | null">
+      Artículos de catálogo asociados a la plantilla.
+    </ResponseField>
+    <ResponseField name="empresa_id" type="number">
+      Negocio al que pertenece la plantilla.
+    </ResponseField>
+    <ResponseField name="id_gupshup" type="string | null">
+      Identificador en GupShup cuando `tipo` es `GupShup`.
+    </ResponseField>
+    <ResponseField name="version" type="string | null">
+      Versión de la plantilla.
+    </ResponseField>
+    <ResponseField name="visible" type="boolean">
+      Siempre `true` en esta respuesta: las plantillas ocultas se filtran.
+    </ResponseField>
+    <ResponseField name="deleted_at" type="string | null">
+      Siempre `null` en esta respuesta: las eliminadas se filtran.
+    </ResponseField>
+    <ResponseField name="created_by_ai" type="boolean">
+      Indica si la plantilla fue generada con asistencia de IA. Se resuelve por la bandera almacenada o, para plantillas antiguas, por el prefijo `osm_` en el nombre.
+    </ResponseField>
+    <ResponseField name="state" type="string">
+      Estado de aprobación en Meta: `APPROVED`, `PENDING`, `REJECTED`, o `no_status` si la plantilla no se encontró en el WABA.
+    </ResponseField>
+    <ResponseField name="created_at" type="string">Fecha de creación.</ResponseField>
+    <ResponseField name="updated_at" type="string">Fecha de última actualización.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Cómo saber cuántos parámetros requiere una plantilla
+
+Antes de enviar, determina el número de valores que debes pasar en `parameters`. La resolución sigue este orden de precedencia:
+
+<Steps>
+  <Step title="Componente BODY del campo template">
+    Busca en `template.components` el elemento con `type: "BODY"` y cuenta el marcador `{{n}}` **más alto** de su `text`. Si `text` no tiene marcadores, usa la longitud de `example.body_text[0]` o de `example.body_text_named_params`.
+  </Step>
+  <Step title="Marcadores en descripcion">
+    Si `template` es `null` o no tiene componente `BODY`, cuenta el `{{n}}` más alto en `descripcion`.
+  </Step>
+  <Step title="Sin parámetros">
+    Si no se encuentra ningún marcador, la plantilla no requiere parámetros y debes enviar `parameters: []`.
+  </Step>
+</Steps>
+
+<Note>
+  Solo se cuentan los parámetros del **cuerpo** (`BODY`). Los parámetros de encabezado y de botones no se envían con este flujo.
+</Note>
+
+Ejemplo: si `descripcion` es `"Hola {{1}}, tu pedido {{2}} ya salió"`, la plantilla requiere **2** parámetros y se envía `parameters: ["Juan", "#9982"]`.
+
+<RequestExample>
+```bash
+curl -X POST https://beta.api-iobot-desarrollo.com/chats/obtener/mensaje/plantilla \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: TU_APP_KEY" \
+  -d '{
+    "empresa_id": 1,
+    "usuario_id": 42
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "plantillas": [
+    {
+      "id": 7,
+      "nombre": "Bienvenida nuevo cliente",
+      "id_plantilla": "bienvenida_nuevo_cliente",
+      "descripcion": "Hola, gracias por escribirnos. Un asesor te atenderá pronto.",
+      "codigo": null,
+      "archivo_nombre": null,
+      "type": "TEXT",
+      "agentes_permitidos": null,
+      "empresa_id": 1,
+      "id_gupshup": null,
+      "tipo": "Cloud",
+      "botones": null,
+      "articles": null,
+      "visible": true,
+      "template": {
+        "name": "bienvenida_nuevo_cliente",
+        "language": "es",
+        "category": "MARKETING",
+        "components": [
+          {
+            "type": "BODY",
+            "text": "Hola, gracias por escribirnos. Un asesor te atenderá pronto."
+          }
+        ]
+      },
+      "version": null,
+      "deleted_at": null,
+      "contacto_variables": null,
+      "created_by_ai": false,
+      "created_at": "2025-03-11T15:02:44.000Z",
+      "updated_at": "2025-03-11T15:02:44.000Z",
+      "state": "APPROVED"
+    },
+    {
+      "id": 12,
+      "nombre": "Seguimiento de cotización",
+      "id_plantilla": "seguimiento_cotizacion",
+      "descripcion": "Hola {{1}}, tu cotización {{2}} sigue disponible por 48 horas.",
+      "codigo": null,
+      "archivo_nombre": null,
+      "type": "TEXT",
+      "agentes_permitidos": "42,55",
+      "empresa_id": 1,
+      "id_gupshup": null,
+      "tipo": "Cloud",
+      "botones": null,
+      "articles": null,
+      "visible": true,
+      "template": {
+        "name": "seguimiento_cotizacion",
+        "language": "es",
+        "category": "MARKETING",
+        "components": [
+          {
+            "type": "BODY",
+            "text": "Hola {{1}}, tu cotización {{2}} sigue disponible por 48 horas.",
+            "example": {
+              "body_text": [["Juan Pérez", "COT-9982"]]
+            }
+          }
+        ]
+      },
+      "version": null,
+      "deleted_at": null,
+      "contacto_variables": null,
+      "created_by_ai": false,
+      "created_at": "2025-04-02T09:20:10.000Z",
+      "updated_at": "2025-04-02T09:20:10.000Z",
+      "state": "APPROVED"
+    }
+  ]
+}
+```
+
+```json 500
+"Error: Could not connect to Meta API"
+```
+</ResponseExample>
+
+<Warning>
+  En caso de error este endpoint devuelve un **string JSON plano**, no un objeto. Considéralo al parsear la respuesta.
+</Warning>

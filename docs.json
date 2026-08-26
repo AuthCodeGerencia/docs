@@ -18,11 +18,16 @@
         "tab": "API reference",
         "groups": [
           {
+            "group": "Plantillas de Mensajes",
+            "pages": [
+              "plantillas-mensajes/obtener-plantillas",
+              "plantillas-mensajes/enviar-plantilla"
+            ]
+          },
+          {
             "group": "Chats",
             "pages": [
-              "chats/obtener-mensaje-plantilla",
               "chats/enviar-mensaje-plantilla-arquitectura",
-              "chats/enviar-plantilla-business",
               "chats/crear-ticket-business",
               "chats/obtener-informacion-numero"
             ]
@@ -63,6 +68,16 @@
       ]
     }
   },
+  "redirects": [
+    {
+      "source": "/chats/obtener-mensaje-plantilla",
+      "destination": "/plantillas-mensajes/obtener-plantillas"
+    },
+    {
+      "source": "/chats/enviar-plantilla-business",
+      "destination": "/plantillas-mensajes/enviar-plantilla"
+    }
+  ],
   "logo": {
     "light": "/logo/light.png",
     "dark": "/logo/dark.png"

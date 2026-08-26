@@ -1,0 +1,157 @@
+---
+title: "Enviar Plantilla"
+description: "Envía una plantilla de WhatsApp a un número usando su ID interno y los parámetros que requiere"
+api: "POST /chats/enviar/plantilla/business"
+---
+
+Envía una plantilla de WhatsApp en nombre del negocio, identificándola por el **`id` interno** obtenido en el [listado de plantillas](/plantillas-mensajes/obtener-plantillas).
+
+No requiere un `chat_id` ni un `contacto_id` preexistentes: si el número no tiene contacto o conversación registrada, ambos se crean automáticamente. Es el endpoint indicado para disparos externos, integraciones de CRM y flujos donde el negocio inicia el contacto sin intervención de un agente.
+
+## Autenticación
+
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
+
+## Encabezados
+
+<ParamField header="x-api-key" type="string" required>
+  App Key del negocio. Consulta [Autenticación](/authentication).
+</ParamField>
+
+## Cuerpo de la solicitud
+
+<ParamField body="empresa_id" type="number" required>
+  ID del negocio que envía la plantilla. Debe ser numérico.
+</ParamField>
+
+<ParamField body="phone_number" type="string" required>
+  Número de WhatsApp del destinatario. Se aceptan formatos con separadores (guiones, espacios, `+`): el sistema conserva únicamente los dígitos. `+52 155 1234 5678` y `5215512345678` son equivalentes.
+</ParamField>
+
+<ParamField body="plantilla_id" type="number" required>
+  **ID interno de la plantilla**, tomado del campo `id` del [listado](/plantillas-mensajes/obtener-plantillas). Debe pertenecer a `empresa_id`; de lo contrario responde `404`.
+</ParamField>
+
+<ParamField body="parameters" type="string[]" default="[]">
+  Valores que sustituyen los marcadores `{{1}}`, `{{2}}`, … del cuerpo de la plantilla, **en orden posicional**: el primer elemento reemplaza `{{1}}`, el segundo `{{2}}`, y así sucesivamente.
+
+  Cada elemento debe ser un string. El sistema los envuelve automáticamente como `{ type: "text", text: "..." }` dentro de un componente `body` antes de enviarlos a Meta.
+
+  ```json
+  ["Juan Pérez", "COT-9982"]
+  ```
+
+  Debe ser un arreglo; cualquier otro tipo se rechaza con `400`. Consulta [cómo saber cuántos parámetros requiere una plantilla](/plantillas-mensajes/obtener-plantillas).
+</ParamField>
+
+<ParamField body="name" type="string">
+  Nombre del contacto. Se usa como nombre visible **solo si el contacto se crea en esta llamada**; si el número ya existe, el nombre registrado no se modifica. Si se omite, se usa el número como nombre. Debe ser un texto; cualquier otro tipo se rechaza con `400`.
+</ParamField>
+
+<Warning>
+  El número de elementos en `parameters` debe coincidir con el número de marcadores del cuerpo de la plantilla. Si envías menos de los requeridos, Meta rechaza el mensaje y la respuesta será `400 Error al enviar la plantilla`.
+</Warning>
+
+## Comportamiento
+
+<Steps>
+  <Step title="Validación">
+    Se verifican los tipos de todos los campos, y que la empresa y la plantilla existan y estén relacionadas entre sí.
+  </Step>
+  <Step title="Resolución del contacto">
+    Se normaliza `phone_number` a solo dígitos y se busca el contacto. Si no existe, se crea con `name` (o el número) como nombre.
+  </Step>
+  <Step title="Resolución del chat">
+    Se busca una conversación del contacto en esa empresa. Si no existe, se crea con estado `bot`, bot disponible y proveedor `fb-apicloud`.
+  </Step>
+  <Step title="Envío y registro">
+    Se envía la plantilla por WhatsApp Cloud API y se registra el mensaje en la conversación, con los marcadores ya sustituidos por los valores de `parameters`, atribuido al nombre del negocio.
+  </Step>
+</Steps>
+
+## Respuesta
+
+<ResponseField name="success" type="boolean">
+  `true` cuando la plantilla fue enviada y registrada correctamente.
+</ResponseField>
+
+<Note>
+  La respuesta exitosa no incluye el identificador del mensaje (`wamid`). Para dar seguimiento al estado de entrega, consulta la conversación del contacto.
+</Note>
+
+<RequestExample>
+```bash
+curl -X POST https://beta.api-iobot-desarrollo.com/chats/enviar/plantilla/business \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: TU_APP_KEY" \
+  -d '{
+    "empresa_id": 1,
+    "phone_number": "5215512345678",
+    "plantilla_id": 12,
+    "name": "Juan Pérez",
+    "parameters": ["Juan Pérez", "COT-9982"]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Éxito
+{
+  "success": true
+}
+```
+
+```json 400 Campo requerido
+{
+  "success": false,
+  "error": "empresa_id es requerido y debe ser un número"
+}
+```
+
+```json 400 parameters inválido
+{
+  "success": false,
+  "error": "parameters debe ser un arreglo"
+}
+```
+
+```json 400 Rechazo de Meta
+{
+  "success": false,
+  "error": "Error al enviar la plantilla"
+}
+```
+
+```json 404 Negocio no encontrado
+{
+  "success": false,
+  "error": "Empresa no encontrada"
+}
+```
+
+```json 404 Plantilla no encontrada
+{
+  "success": false,
+  "error": "Plantilla no encontrada"
+}
+```
+
+```json 500 Error inesperado
+{
+  "success": false,
+  "error": "Error: ..."
+}
+```
+</ResponseExample>
+
+## Errores comunes
+
+| Estado | Error | Causa |
+|---|---|---|
+| `400` | `empresa_id es requerido y debe ser un número` | Falta `empresa_id` o no es numérico |
+| `400` | `phone_number es requerido` | Falta el número o viene vacío |
+| `400` | `plantilla_id es requerido y debe ser un número` | Falta `plantilla_id` o no es numérico |
+| `400` | `parameters debe ser un arreglo` | `parameters` no es un arreglo |
+| `400` | `name debe ser un texto` | `name` se envió con un tipo distinto de string |
+| `400` | `Error al enviar la plantilla` | Meta rechazó el envío: plantilla no aprobada, número inválido, o cantidad de parámetros incorrecta |
+| `404` | `Plantilla no encontrada` | El `plantilla_id` no existe o pertenece a otra empresa |
