@@ -55,6 +55,12 @@
               "Campañas meta/obtener-campanias-sin-insights",
               "Campañas meta/obtener-adsets-campania"
             ]
+          },
+          {
+            "group": "Ordenes",
+            "pages": [
+              "ordenes/obtener-ordenes-canceladas"
+            ]
           }
         ]
       }

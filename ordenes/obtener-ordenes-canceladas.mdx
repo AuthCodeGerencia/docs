@@ -1,0 +1,211 @@
+---
+title: "Obtener Órdenes Canceladas"
+description: "Lista las órdenes canceladas de un negocio, con filtro opcional por motivo de cancelación"
+api: "GET /estadisticas/obtener/ordersCanceled/{empresa_id}"
+---
+
+Retorna el listado paginado de órdenes con `status` cancelado (`5`) de un negocio. Útil para identificar carritos abandonados: filtrando por `cancelReason` se aíslan las órdenes que el bot canceló por inactividad en el chat, en lugar de cancelaciones manuales o de otro origen.
+
+## Autenticación
+
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
+
+## Parámetros de ruta
+
+<ParamField path="empresa_id" type="number" required>
+  ID del negocio cuyas órdenes canceladas se desean obtener.
+</ParamField>
+
+## Parámetros de consulta
+
+<ParamField query="startDate" type="string" required>
+  Fecha inicial del rango de creación de la orden, en formato ISO 8601 (`2026-08-01` o `2026-08-01T00:00:00Z`).
+</ParamField>
+
+<ParamField query="endDate" type="string" required>
+  Fecha final del rango de creación de la orden, en formato ISO 8601.
+</ParamField>
+
+<ParamField query="type" type="string">
+  Canal de la orden, por ejemplo `wa` para WhatsApp.
+</ParamField>
+
+<ParamField query="cancelReason" type="string">
+  Filtra por coincidencia parcial en el motivo de cancelación (`cancel_reason`). Usa `inactividad` para obtener solo los carritos abandonados que el bot cancela automáticamente por falta de respuesta del cliente (`cancel_reason`: `(BOT) Cancelada por inactividad en el chat`). Si se omite, se incluyen las órdenes canceladas por cualquier motivo.
+</ParamField>
+
+<ParamField query="page" type="number" default="1">
+  Página de resultados, empezando en 1.
+</ParamField>
+
+<ParamField query="limit" type="number" default="10">
+  Registros por página.
+</ParamField>
+
+## Comportamiento
+
+- Una orden se considera cancelada cuando `status` es `5`, sin importar el motivo — ese es siempre el filtro base.
+- `cancelReason` es un filtro adicional opcional (`LIKE %valor%` sobre `cancel_reason`); no reemplaza el filtro de `status`.
+- Los resultados se ordenan por fecha de creación descendente (la orden más reciente primero).
+- `data` retorna el registro completo de la orden (todas las columnas de `orders`), con el chat y el contacto de WhatsApp incluidos. No incluye el detalle de productos ni un total calculado.
+
+## Respuesta
+
+<ResponseField name="success" type="boolean">
+  `true` cuando la solicitud se procesó correctamente.
+</ResponseField>
+
+<ResponseField name="data" type="object[]">
+  Listado de órdenes canceladas.
+
+  <Expandable title="Propiedades de cada orden">
+    <ResponseField name="id" type="number">
+      ID de la orden.
+    </ResponseField>
+
+    <ResponseField name="status" type="number">
+      Estado de la orden. Siempre `5` (cancelada) en esta respuesta.
+    </ResponseField>
+
+    <ResponseField name="cancel_reason" type="string">
+      Motivo de cancelación registrado.
+    </ResponseField>
+
+    <ResponseField name="type" type="string">
+      Canal de origen de la orden, por ejemplo `wa`.
+    </ResponseField>
+
+    <ResponseField name="shipment_method" type="string">
+      Método de entrega elegido (`delivery`, `pickup`) o `null`.
+    </ResponseField>
+
+    <ResponseField name="payment_method" type="string">
+      Método de pago elegido o `null`.
+    </ResponseField>
+
+    <ResponseField name="chat_id" type="number">
+      ID del chat en el que se armó la orden.
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string">
+      Fecha de creación de la orden, en formato ISO 8601.
+    </ResponseField>
+
+    <ResponseField name="updatedAt" type="string">
+      Fecha de la última actualización de la orden (para las canceladas por el bot, el momento de la cancelación).
+    </ResponseField>
+
+    <ResponseField name="chat" type="object">
+      Chat asociado a la orden.
+
+      <Expandable title="Propiedades de chat">
+        <ResponseField name="id" type="number">ID del chat.</ResponseField>
+        <ResponseField name="contacto" type="object">
+          Contacto de WhatsApp del chat: incluye `id`, `nombre`, `numero` y `meta_id`.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="pagination" type="object">
+  <Expandable title="Propiedades de pagination">
+    <ResponseField name="currentPage" type="number">Página actual.</ResponseField>
+    <ResponseField name="totalPages" type="number">Total de páginas disponibles.</ResponseField>
+    <ResponseField name="totalCount" type="number">Total de órdenes que cumplen el filtro, sin paginar.</ResponseField>
+    <ResponseField name="limit" type="number">Registros por página aplicados.</ResponseField>
+    <ResponseField name="hasNextPage" type="boolean">Si existe una página siguiente.</ResponseField>
+    <ResponseField name="hasPrevPage" type="boolean">Si existe una página anterior.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://beta.api-iobot-desarrollo.com/estadisticas/obtener/ordersCanceled/92?startDate=2026-08-01&endDate=2026-08-31&type=wa&cancelReason=inactividad&page=1&limit=10" \
+  -H "x-api-key: TU_APP_KEY"
+```
+
+```text Postman
+Método:  GET
+URL:     https://beta.api-iobot-desarrollo.com/estadisticas/obtener/ordersCanceled/92
+
+Query Params
+  startDate     2026-08-01
+  endDate       2026-08-31
+  type          wa
+  cancelReason  inactividad
+  page          1
+  limit         10
+
+Headers
+  x-api-key     TU_APP_KEY
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Éxito
+{
+  "success": true,
+  "data": [
+    {
+      "id": 272992,
+      "status": 5,
+      "shipment_method": "delivery",
+      "payment_method": null,
+      "empresa_id": 92,
+      "chat_id": 252037,
+      "cancel_reason": "(BOT) Cancelada por inactividad en el chat",
+      "type": "wa",
+      "createdAt": "2026-08-28T23:32:55.000Z",
+      "updatedAt": "2026-08-28T23:55:04.000Z",
+      "chat": {
+        "id": 252037,
+        "contacto": {
+          "id": 139458,
+          "nombre": "Juan Pérez",
+          "numero": "50494898989",
+          "meta_id": "50494898989"
+        }
+      }
+    }
+  ],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 6,
+    "totalCount": 57,
+    "limit": 10,
+    "hasNextPage": true,
+    "hasPrevPage": false
+  }
+}
+```
+
+```json 200 Sin órdenes canceladas
+{
+  "success": true,
+  "data": [],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 0,
+    "totalCount": 0,
+    "limit": 10,
+    "hasNextPage": false,
+    "hasPrevPage": false
+  }
+}
+```
+
+```json 401 App Key inválido
+{
+  "message": "Invalid API key"
+}
+```
+
+```json 500 Error inesperado
+{
+  "success": false,
+  "message": "Hubo un error en el servidor",
+  "error": "..."
+}
+```
+</ResponseExample>
