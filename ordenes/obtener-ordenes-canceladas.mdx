@@ -48,6 +48,7 @@ Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenti
 - `cancelReason` es un filtro adicional opcional (`LIKE %valor%` sobre `cancel_reason`); no reemplaza el filtro de `status`.
 - Los resultados se ordenan por fecha de creación descendente (la orden más reciente primero).
 - `data` retorna el registro completo de la orden (todas las columnas de `orders`), con el chat y el contacto de WhatsApp incluidos. No incluye el detalle de productos ni un total calculado.
+- La tabla `orders` no tiene una columna dedicada a la fecha de cancelación: como toda orden en esta respuesta tiene `status` `5`, `updatedAt` **es** el momento en que se canceló (la última escritura sobre la orden es justo el cambio de estado a cancelada).
 
 ## Respuesta
 
@@ -92,7 +93,7 @@ Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenti
     </ResponseField>
 
     <ResponseField name="updatedAt" type="string">
-      Fecha de la última actualización de la orden (para las canceladas por el bot, el momento de la cancelación).
+      Fecha y hora en que la orden fue cancelada, en formato ISO 8601. La tabla `orders` no guarda un campo dedicado para esto: como toda orden de esta respuesta tiene `status` `5`, `updatedAt` refleja el momento del cambio a cancelada.
     </ResponseField>
 
     <ResponseField name="chat" type="object">
@@ -143,6 +144,8 @@ Headers
 </RequestExample>
 
 <ResponseExample>
+`updatedAt` es la fecha de cancelación de la orden (`2026-08-28T23:55:04.000Z` en el ejemplo).
+
 ```json 200 Éxito
 {
   "success": true,
