@@ -1,0 +1,142 @@
+---
+title: "Agregar Producto a una Orden"
+description: "Agrega un producto (con extras opcionales) a una orden existente"
+api: "POST /catalogs/orders/products/new"
+---
+
+Crea un detalle de orden (`OrderDetails`) a partir de un producto del catálogo (`ArticulosMeta`) y lo asocia a una orden existente. Permite adjuntar extras del producto y, opcionalmente, un precio personalizado por extra. Notifica el cambio en tiempo real al canal correspondiente de la orden.
+
+## Autenticación
+
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
+
+## Body
+
+<ParamField body="orderId" type="number" required>
+  ID de la orden a la que se agregará el producto.
+</ParamField>
+
+<ParamField body="articleId" type="number" required>
+  ID del producto (`ArticulosMeta`) a agregar a la orden.
+</ParamField>
+
+<ParamField body="quantity" type="number" default="1">
+  Cantidad del producto a agregar.
+</ParamField>
+
+<ParamField body="extras" type="object[]" required>
+  Lista de extras del producto. Envía un arreglo vacío (`[]`) si el producto no lleva extras.
+
+  <Expandable title="Propiedades de cada extra">
+    <ParamField body="id" type="number" required>
+      ID del extra (`ProductExtra`).
+    </ParamField>
+
+    <ParamField body="customPrice" type="number">
+      Precio personalizado para este extra en esta orden. Solo se aplica si también se envía `picked`.
+    </ParamField>
+
+    <ParamField body="picked" type="string">
+      Valor/opción elegida del extra. Solo se aplica si también se envía `customPrice`.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Comportamiento
+
+- Valida que exista el producto (`articleId`) y la orden (`orderId`); si alguno no existe, responde `400`.
+- Registra el evento `product_picked` en `StatsWaEcommerce`.
+- Determina el tipo del detalle de orden: `"delivery_coupon"` si el producto es de tipo `free_delivery` o `delivery`; de lo contrario `"item"`.
+- Crea el `OrderDetails` con `quantity` (por defecto `1`), `retailer_id` del producto y el tipo determinado.
+- Por cada elemento de `extras`:
+  - Registra el evento `extra_picked` en `StatsWaEcommerce`.
+  - Si el extra existe en `ProductExtra`, crea un `OrderDetailsExtra` asociado al detalle recién creado.
+  - Si el extra trae `customPrice` **y** `picked`, guarda un precio personalizado dentro de `order.extra_data` (estructura versionada, indexada por orden y por `extraId:orderDetailId`) y guarda la orden.
+- Emite un evento en tiempo real del cambio en la orden: usa el canal Soketi/Pusher para órdenes de tipo `app`/`web`, y el canal estándar para el resto de tipos (p. ej. `wa`).
+
+## Respuesta
+
+<ResponseField name="message" type="string">
+  `"Producto añadido a la orden"` cuando el producto se agregó correctamente.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://beta.api-iobot-desarrollo.com/catalogs/orders/products/new" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: TU_APP_KEY" \
+  -d '{
+    "orderId": 272992,
+    "articleId": 1834,
+    "quantity": 2,
+    "extras": []
+  }'
+```
+
+```bash cURL con extras
+curl -X POST "https://beta.api-iobot-desarrollo.com/catalogs/orders/products/new" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: TU_APP_KEY" \
+  -d '{
+    "orderId": 272992,
+    "articleId": 1834,
+    "quantity": 1,
+    "extras": [
+      { "id": 12 },
+      { "id": 57, "customPrice": 25.5, "picked": "queso extra" }
+    ]
+  }'
+```
+
+```text Postman
+Método:  POST
+URL:     https://beta.api-iobot-desarrollo.com/catalogs/orders/products/new
+
+Headers
+  Content-Type  application/json
+  x-api-key     TU_APP_KEY
+
+Body (raw JSON)
+{
+  "orderId": 272992,
+  "articleId": 1834,
+  "quantity": 1,
+  "extras": [
+    { "id": 12 },
+    { "id": 57, "customPrice": 25.5, "picked": "queso extra" }
+  ]
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Éxito
+{
+  "message": "Producto añadido a la orden"
+}
+```
+
+```json 400 Producto no encontrado
+{
+  "message": "Producto no encontrado"
+}
+```
+
+```json 400 Orden no encontrada
+{
+  "message": "Order no existe"
+}
+```
+
+```json 401 App Key inválido
+{
+  "message": "Invalid API key"
+}
+```
+
+```json 500 Error inesperado
+{
+  "message": "Algo salió mal"
+}
+```
+</ResponseExample>

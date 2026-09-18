@@ -1,0 +1,205 @@
+---
+title: "Listar Órdenes de una Sucursal"
+description: "Lista paginada de órdenes de un negocio, filtrable por sucursal, estado, agente y rango de fechas"
+api: "GET /catalogs/v2/orders/sucursal/{businessId}"
+---
+
+Retorna un listado paginado de órdenes de un negocio, pensado para scroll infinito. Permite filtrar por sucursal, "tab" de estado, agente de soporte asignado y rango de fechas.
+
+<Warning>
+  Este endpoint **no usa `x-api-key`**. Requiere un `token` de sesión de usuario (a diferencia de otros endpoints de órdenes como [Enviar Link de Pago](/ordenes/enviar-link-pago) o [Agregar Producto a una Orden](/ordenes/agregar-producto-orden), que sí aceptan App Key). Además, el negocio debe tener un plan asignado; si no lo tiene, la respuesta es `400`.
+</Warning>
+
+## Autenticación
+
+Requiere el parámetro `token` (token de sesión del usuario) enviado en el **query string** o en el **body** de la solicitud. Consulta [Autenticación](/authentication).
+
+## Parámetros de ruta
+
+<ParamField path="businessId" type="number" required>
+  ID del negocio cuyas órdenes se desean listar.
+</ParamField>
+
+## Parámetros de consulta
+
+<ParamField query="token" type="string" required>
+  Token de sesión del usuario.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filtra por "tab" de estado. Valores válidos:
+  - `pending` → status `8`
+  - `progress` → status `1`
+  - `on-the-way` → status `2`, `3`
+  - `completed` → status `4`
+  - `cancelled` → status `5`
+
+  Si se omite, se incluyen órdenes de cualquier status.
+</ParamField>
+
+<ParamField query="page" type="number" default="1">
+  Página de resultados, empezando en 1.
+</ParamField>
+
+<ParamField query="limit" type="number" default="9">
+  Registros por página.
+</ParamField>
+
+<ParamField query="sucursalId" type="number">
+  Filtra las órdenes de una sucursal específica.
+</ParamField>
+
+<ParamField query="userId" type="number">
+  Filtra por el agente de soporte (`soporte_id`) asignado al chat de la orden.
+</ParamField>
+
+<ParamField query="from" type="string">
+  Fecha inicial del rango de creación de la orden (`createdAt`), en formato ISO 8601. El cliente debe enviar el límite ya calculado en su propia zona horaria.
+</ParamField>
+
+<ParamField query="to" type="string">
+  Fecha final del rango de creación de la orden, en formato ISO 8601. Es un límite **exclusivo**.
+</ParamField>
+
+## Comportamiento
+
+- Filtra siempre por `empresa_id = businessId`; opcionalmente por `sucursal_id`, rango de `createdAt` (`from`/`to`) y `status` según el tab indicado.
+- Cuenta el total de órdenes que cumplen el filtro y obtiene la página solicitada en paralelo, incluyendo `chat` (con `contacto`), `sucursal` y `zona` de cada orden.
+- Si se envía `userId`, la consulta se une (`INNER JOIN`) con `chat` filtrando por `soporte_id`, tanto para el conteo como para el listado.
+- Por cada orden de la página, calcula y agrega:
+  - **`details`**: productos de la orden con su `articulo` y `extras`.
+  - **`total`**: productos + extras (con precio personalizado si existe en `order.extra_data`) + costo de envío según la zona. Si hay un producto `delivery_coupon`, el envío es `0`.
+  - **`discount`**: cupones, recompensas y puntos reclamados.
+- Devuelve `hasNextPage` calculado a partir del offset, la cantidad de resultados de la página y el `total`.
+
+<Note>
+  Existen rutas hermanas bajo el mismo prefijo `/catalogs/v2/orders/sucursal/:businessId`, con la misma autenticación por `token`:
+  - `GET .../counts` — conteo de órdenes agrupado por tab.
+  - `GET .../search` — búsqueda de órdenes.
+  - `GET .../order/:orderId` — detalle de una orden específica de la sucursal.
+</Note>
+
+## Respuesta
+
+<ResponseField name="status" type="string">
+  `"success"` cuando la solicitud se procesó correctamente.
+</ResponseField>
+
+<ResponseField name="data" type="object[]">
+  Listado de órdenes de la página solicitada.
+
+  <Expandable title="Propiedades de cada orden">
+    <ResponseField name="id" type="number">ID de la orden.</ResponseField>
+    <ResponseField name="status" type="number">Estado de la orden.</ResponseField>
+    <ResponseField name="type" type="string">Canal de origen (`wa`, `app`, `web`, etc.).</ResponseField>
+    <ResponseField name="shipment_method" type="string">Método de entrega (`delivery`, `pickup`) o `null`.</ResponseField>
+    <ResponseField name="payment_method" type="string">Método de pago o `null`.</ResponseField>
+    <ResponseField name="createdAt" type="string">Fecha de creación de la orden, en formato ISO 8601.</ResponseField>
+    <ResponseField name="total" type="number">Total calculado de la orden.</ResponseField>
+    <ResponseField name="discount" type="number">Total de descuentos aplicados.</ResponseField>
+    <ResponseField name="details" type="object[]">Productos de la orden, cada uno con su `articulo` y `extras`.</ResponseField>
+    <ResponseField name="chat" type="object">Chat asociado, con su `contacto`.</ResponseField>
+    <ResponseField name="sucursal" type="object">Sucursal asignada a la orden.</ResponseField>
+    <ResponseField name="zona" type="object">Zona de entrega de la orden.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="total" type="number">
+  Total de órdenes que cumplen el filtro, sin paginar.
+</ResponseField>
+
+<ResponseField name="hasNextPage" type="boolean">
+  Si existe una página siguiente.
+</ResponseField>
+
+<ResponseField name="page" type="number">
+  Página actual devuelta.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://beta.api-iobot-desarrollo.com/catalogs/v2/orders/sucursal/92?token=TU_TOKEN&status=progress&page=1&limit=9"
+```
+
+```text Postman
+Método:  GET
+URL:     https://beta.api-iobot-desarrollo.com/catalogs/v2/orders/sucursal/92
+
+Query Params
+  token     TU_TOKEN
+  status    progress
+  page      1
+  limit     9
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Éxito
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 272992,
+      "status": 1,
+      "type": "wa",
+      "shipment_method": "delivery",
+      "payment_method": "cash",
+      "createdAt": "2026-08-28T23:32:55.000Z",
+      "total": 245.5,
+      "discount": 0,
+      "details": [
+        {
+          "id": 55021,
+          "quantity": 2,
+          "type": "item",
+          "articulo": {
+            "id": 1834,
+            "name": "Hamburguesa Clásica",
+            "price": "95.00"
+          },
+          "extras": []
+        }
+      ],
+      "chat": {
+        "id": 252037,
+        "contacto": {
+          "id": 139458,
+          "nombre": "Juan Pérez",
+          "numero": "50494898989"
+        }
+      },
+      "sucursal": {
+        "id": 4,
+        "nombre": "Sucursal Centro"
+      },
+      "zona": {
+        "id": 12,
+        "precio": "35.00"
+      }
+    }
+  ],
+  "total": 57,
+  "hasNextPage": true,
+  "page": 1
+}
+```
+
+```json 400 Token requerido
+{
+  "error": "Token is required"
+}
+```
+
+```json 400 Negocio sin plan
+{
+  "success": false,
+  "error": "No se ha encontrado el plan de la empresa"
+}
+```
+
+```json 500 Error inesperado
+{
+  "message": "Internal server error"
+}
+```
+</ResponseExample>

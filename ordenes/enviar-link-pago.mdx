@@ -1,0 +1,89 @@
+---
+title: "Enviar Link de Pago"
+description: "Genera el link de pago de una orden y lo envía al cliente por el canal del chat"
+api: "POST /catalogs/orders/payment/link"
+---
+
+Genera la URL de pago de una orden (agregando `tid` con el `transactionId` de la orden y `oid` con el ID de la orden) y la envía como mensaje de texto al contacto del chat asociado a la orden. También registra el evento `payment_link_sent` en las estadísticas de e-commerce del negocio.
+
+## Autenticación
+
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
+
+## Body
+
+<ParamField body="businessId" type="number" required>
+  ID del negocio (empresa) dueño de la orden. Se usa para obtener la URL base de pago configurada en `feature_flags["payments-url"]`.
+</ParamField>
+
+<ParamField body="orderId" type="number" required>
+  ID de la orden para la que se generará y enviará el link de pago.
+</ParamField>
+
+## Comportamiento
+
+- Busca la orden (`orderId`) y el negocio (`businessId`); si el negocio no tiene configurada `feature_flags["payments-url"]`, la generación de la URL fallará.
+- Toma el chat de la orden y su contacto para saber a quién enviar el mensaje.
+- Si la orden aún no tiene `transactionId`, genera uno nuevo (UUID v4) y lo guarda en la orden.
+- Establece `paidExpire` en la orden a **2 horas** a partir del momento de la solicitud (vencimiento del link).
+- Construye la URL final agregando los query params `tid` (transactionId) y `oid` (orderId) sobre la URL base de pago del negocio.
+- Envía la URL como mensaje de texto al contacto por el canal del chat (p. ej. WhatsApp).
+- Registra un evento `payment_link_sent` en `StatsWaEcommerce` (no bloquea la respuesta si falla).
+- No valida el `status` de la orden ni si ya fue pagada: puede reenviarse el link las veces que se necesite, lo que reinicia el `paidExpire`.
+
+<Note>
+  Existen variantes de este endpoint para otros canales: `POST /catalogs/orders/payment/link/template` (envía el link mediante una plantilla de WhatsApp) y `POST /catalogs/orders/payment/link/sms` (envía el link por SMS).
+</Note>
+
+## Respuesta
+
+<ResponseField name="message" type="string">
+  `"ok"` cuando el link se generó y el mensaje se envió correctamente.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://beta.api-iobot-desarrollo.com/catalogs/orders/payment/link" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: TU_APP_KEY" \
+  -d '{
+    "businessId": 92,
+    "orderId": 272992
+  }'
+```
+
+```text Postman
+Método:  POST
+URL:     https://beta.api-iobot-desarrollo.com/catalogs/orders/payment/link
+
+Headers
+  Content-Type  application/json
+  x-api-key     TU_APP_KEY
+
+Body (raw JSON)
+{
+  "businessId": 92,
+  "orderId": 272992
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Éxito
+{
+  "message": "ok"
+}
+```
+
+```json 401 App Key inválido
+{
+  "message": "Invalid API key"
+}
+```
+
+```json 500 Error inesperado
+{
+  "message": "Internal server error"
+}
+```
+</ResponseExample>

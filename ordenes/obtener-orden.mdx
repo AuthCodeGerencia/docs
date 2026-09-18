@@ -1,0 +1,152 @@
+---
+title: "Obtener Orden por ID"
+description: "Obtiene el detalle completo de una orden, incluyendo productos, totales y relaciones"
+api: "GET /catalogs/order/{orderId}"
+---
+
+Retorna una orden completa: sus datos base más productos (`details`), totales calculados, chat/contacto, zona, sucursal, empresa y conductor asignado (si aplica).
+
+## Autenticación
+
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
+
+## Parámetros de ruta
+
+<ParamField path="orderId" type="number" required>
+  ID de la orden a consultar.
+</ParamField>
+
+## Comportamiento
+
+- Busca la orden por `orderId`, incluyendo sus relaciones: `chat` (con `contacto`), `zona` (con `sucursal`), `empresa`, `user`, `sucursal` y `driver`.
+- Calcula y agrega campos derivados a la orden antes de responder:
+  - **`details`**: lista de productos de la orden, cada uno con su `articulo` (producto del catálogo) y sus `extras` (con el `ProductExtra` asociado a cada uno).
+  - **`total`**: suma de productos y extras (usando precio personalizado desde `order.extra_data` cuando existe) más el costo de envío. Si la orden incluye un producto tipo `delivery_coupon`, el envío se cobra en `0`.
+  - **`discount`**: suma de descuentos por cupones (`coupon`), recompensas (`reward`/`reward_points`) y puntos reclamados (`claimed_points`).
+  - **`speedy_delivery_price`**: si el envío es `delivery` y la orden tiene un precio calculado por la integración Speedy, se usa ese valor en lugar del precio de la zona.
+  - **`tax_id_label`**: etiqueta del identificador fiscal según la configuración del negocio (por defecto `"NIT"`).
+  - **`tracker`** (opcional): si la orden tiene `driver` asignado, intenta incluir su ubicación actual — vía la integración VAES si el negocio la tiene configurada, o la última ubicación conocida del conductor en el sistema.
+- Si la orden tiene `external_user_id`, busca el contacto y chat "in-app" correspondientes (por `meta_id`) y los agrega como **`in_app_chat`**.
+
+<Warning>
+  El endpoint no valida explícitamente que la orden exista antes de procesarla: si `orderId` no corresponde a ninguna orden, la búsqueda inicial devuelve `null` y el cálculo de campos derivados falla, resultando en una respuesta `500` en lugar de un `404`.
+</Warning>
+
+## Respuesta
+
+<ResponseField name="data" type="object">
+  Orden completa con sus relaciones y campos calculados.
+
+  <Expandable title="Propiedades principales">
+    <ResponseField name="id" type="number">ID de la orden.</ResponseField>
+    <ResponseField name="status" type="number">Estado de la orden.</ResponseField>
+    <ResponseField name="type" type="string">Canal de origen (`wa`, `app`, `web`, `call`, etc.).</ResponseField>
+    <ResponseField name="shipment_method" type="string">Método de entrega (`delivery`, `pickup`) o `null`.</ResponseField>
+    <ResponseField name="payment_method" type="string">Método de pago o `null`.</ResponseField>
+    <ResponseField name="total" type="number">Total calculado de la orden (productos + extras + envío - descuentos).</ResponseField>
+    <ResponseField name="discount" type="number">Total de descuentos aplicados (cupones, recompensas, puntos).</ResponseField>
+    <ResponseField name="speedy_delivery_price" type="number">Precio de envío calculado por Speedy, o `null` si no aplica.</ResponseField>
+    <ResponseField name="tax_id_label" type="string">Etiqueta del identificador fiscal a mostrar (por defecto `"NIT"`).</ResponseField>
+    <ResponseField name="details" type="object[]">Productos de la orden, cada uno con su `articulo` y sus `extras`.</ResponseField>
+    <ResponseField name="chat" type="object">Chat asociado a la orden, con su `contacto`.</ResponseField>
+    <ResponseField name="zona" type="object">Zona de entrega de la orden, con su `sucursal`.</ResponseField>
+    <ResponseField name="sucursal" type="object">Sucursal asignada a la orden.</ResponseField>
+    <ResponseField name="empresa" type="object">Negocio dueño de la orden.</ResponseField>
+    <ResponseField name="driver" type="object">Conductor asignado a la orden, o `null`.</ResponseField>
+    <ResponseField name="tracker" type="object">
+      Ubicación actual del conductor asignado. Solo presente si la orden tiene `driver` y se pudo obtener su ubicación.
+    </ResponseField>
+    <ResponseField name="in_app_chat" type="object">
+      Chat in-app del usuario, si la orden tiene `external_user_id` y existe un contacto/chat correspondiente.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://beta.api-iobot-desarrollo.com/catalogs/order/272992" \
+  -H "x-api-key: TU_APP_KEY"
+```
+
+```text Postman
+Método:  GET
+URL:     https://beta.api-iobot-desarrollo.com/catalogs/order/272992
+
+Headers
+  x-api-key     TU_APP_KEY
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Éxito
+{
+  "data": {
+    "id": 272992,
+    "status": 1,
+    "type": "wa",
+    "shipment_method": "delivery",
+    "payment_method": "cash",
+    "total": 245.5,
+    "discount": 0,
+    "speedy_delivery_price": null,
+    "tax_id_label": "NIT",
+    "details": [
+      {
+        "id": 55021,
+        "quantity": 2,
+        "type": "item",
+        "articulo": {
+          "id": 1834,
+          "name": "Hamburguesa Clásica",
+          "price": "95.00"
+        },
+        "extras": [
+          {
+            "id": 9021,
+            "extra_id": 57,
+            "extra": {
+              "id": 57,
+              "name": "Queso extra",
+              "charge": "10.00"
+            }
+          }
+        ]
+      }
+    ],
+    "chat": {
+      "id": 252037,
+      "contacto": {
+        "id": 139458,
+        "nombre": "Juan Pérez",
+        "numero": "50494898989"
+      }
+    },
+    "zona": {
+      "id": 12,
+      "precio": "35.00",
+      "sucursal": {
+        "id": 4,
+        "nombre": "Sucursal Centro"
+      }
+    },
+    "empresa": {
+      "id": 92,
+      "nombre": "Mi Negocio"
+    },
+    "driver": null
+  }
+}
+```
+
+```json 401 App Key inválido
+{
+  "message": "Invalid API key"
+}
+```
+
+```json 500 Error inesperado
+{
+  "message": "Internal server error"
+}
+```
+</ResponseExample>

@@ -59,7 +59,14 @@
           {
             "group": "Ordenes",
             "pages": [
-              "ordenes/obtener-ordenes-canceladas"
+              "ordenes/obtener-ordenes-canceladas",
+              "ordenes/obtener-orden",
+              "ordenes/listar-ordenes-sucursal",
+              "ordenes/enviar-link-pago",
+              "ordenes/agregar-producto-orden",
+              "ordenes/crear-orden",
+              "ordenes/actualizar-orden",
+              "ordenes/eliminar-producto-orden"
             ]
           }
         ]

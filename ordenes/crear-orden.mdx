@@ -1,0 +1,201 @@
+---
+title: "Crear una Orden"
+description: "Crea una orden desde cero a partir de un chat"
+api: "POST /catalogs/orders/create"
+---
+
+Crea una orden nueva asociada a un chat, la liga a una zona y sucursal (si aplica) y notifica el cambio en tiempo real.
+
+<Note>
+  **Precondición para `type: "wa"`**: el chat debe tener `status` en `"proceso"` o `"pendiente"` (bot liberado a un agente o con ticket activo). Este endpoint no cambia ese status — lo valida contra el valor actual del chat en base de datos. Si el chat sigue en flujo de bot automático (`status: "bot"`), primero hay que escalarlo a un agente, por ejemplo con [Crear Ticket como Business](/chats/crear-ticket-business). Para `type: "app"`, `"web"` o `"call"` no aplica esta validación.
+</Note>
+
+## Autenticación
+
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
+
+## Body
+
+<ParamField body="chatId" type="number" required>
+  ID del chat sobre el que se crea la orden.
+</ParamField>
+
+<ParamField body="businessId" type="number" required>
+  ID del negocio dueño de la orden.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Canal/origen de la orden (`wa`, `app`, `web`, `call`, etc.). Determina reglas especiales de validación y el canal usado para notificar el cambio en tiempo real.
+</ParamField>
+
+<ParamField body="shipmentMethod" type="string">
+  Método de entrega (`delivery`, `pickup`).
+</ParamField>
+
+<ParamField body="paymentMethod" type="string">
+  Método de pago.
+</ParamField>
+
+<ParamField body="deliveryHint" type="string">
+  Indicación adicional para la entrega.
+</ParamField>
+
+<ParamField body="address" type="string">
+  Dirección de entrega, en texto libre. Se guarda como `raw_adress`.
+</ParamField>
+
+<ParamField body="zoneId" type="number">
+  ID de la zona de entrega. **Requerido si `type` es `"wa"`.** Determina también la sucursal final de la orden.
+</ParamField>
+
+<ParamField body="lat" type="number">
+  Latitud de la ubicación de entrega.
+</ParamField>
+
+<ParamField body="lng" type="number">
+  Longitud de la ubicación de entrega.
+</ParamField>
+
+<ParamField body="supportId" type="number">
+  ID del agente de soporte asignado a la orden (`soporte_id`).
+</ParamField>
+
+<ParamField body="sucursalId" type="number">
+  ID de sucursal sugerido. Si se envía `zoneId` y la zona tiene una sucursal asociada, este valor es sobrescrito (ver advertencia abajo).
+</ParamField>
+
+<ParamField body="scheduleAt" type="string">
+  Fecha/hora programada para la orden. También se acepta como `schedule_at`; si se envían ambos, `scheduleAt` tiene prioridad.
+</ParamField>
+
+## Comportamiento
+
+- Busca el chat (`chatId`).
+- Si `type === "wa"`:
+  - Valida que `chat.status` sea `"proceso"` o `"pendiente"`; si no, responde `400` ("El chat tiene que tener el bot liberado o tener un ticket.").
+  - Exige `zoneId`; si falta, responde `400` ("Zona es requerida").
+- Si se envía `zoneId`, busca la zona (con su `sucursal`) y registra el evento `selected_zone` en `StatsWaEcommerce`.
+- Crea la orden con `status: 0`, usando `location_picked` = nombre de la sucursal de la zona (si hay zona).
+- Espera ~1 segundo, vuelve a cargar la orden con su zona y **sobrescribe `sucursal_id` con la sucursal de la zona** (`zona.sucursal_id`).
+- Guarda la última ubicación del usuario (`raw_address`, `lat`, `lng`, `zoneId`) en `chat.extraData.userLocation`.
+- Registra el evento `order_created` en `StatsWaEcommerce`.
+- Si `type !== "call"`, asocia la orden al chat (`chat.orderId = orderCreated.id`).
+- Emite un evento en tiempo real: canal Soketi/Pusher si `type` es `app`/`web`, canal estándar para el resto.
+- Si `type === "call"`, además crea un registro de auditoría en `LogsInvoices` (`call_center_order_created`).
+
+<Warning>
+  El `sucursalId` que envíes en el body puede ser **sobrescrito silenciosamente**: si la orden queda asociada a una `zoneId` con sucursal configurada, la sucursal final de la orden es la de esa zona, no la que enviaste en `sucursalId`.
+</Warning>
+
+## Respuesta
+
+<ResponseField name="data" type="object">
+  La orden recién creada (sin relaciones cargadas).
+
+  <Expandable title="Propiedades principales">
+    <ResponseField name="id" type="number">ID de la orden creada.</ResponseField>
+    <ResponseField name="chat_id" type="number">ID del chat asociado.</ResponseField>
+    <ResponseField name="empresa_id" type="number">ID del negocio.</ResponseField>
+    <ResponseField name="status" type="number">Estado inicial de la orden. Siempre `0`.</ResponseField>
+    <ResponseField name="shipment_method" type="string">Método de entrega, o `null`.</ResponseField>
+    <ResponseField name="payment_method" type="string">Método de pago, o `null`.</ResponseField>
+    <ResponseField name="raw_adress" type="string">Dirección enviada, o `null`.</ResponseField>
+    <ResponseField name="zone_id" type="number">ID de la zona asociada, o `null`.</ResponseField>
+    <ResponseField name="lat" type="number">Latitud, o `null`.</ResponseField>
+    <ResponseField name="lng" type="number">Longitud, o `null`.</ResponseField>
+    <ResponseField name="type" type="string">Canal de la orden.</ResponseField>
+    <ResponseField name="soporte_id" type="number">Agente de soporte asignado, o `null`.</ResponseField>
+    <ResponseField name="sucursal_id" type="number">Sucursal inicial (antes de ser recalculada por la zona).</ResponseField>
+    <ResponseField name="schedule_at" type="string">Fecha programada, o `null`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://beta.api-iobot-desarrollo.com/catalogs/orders/create" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: TU_APP_KEY" \
+  -d '{
+    "chatId": 252037,
+    "businessId": 92,
+    "type": "wa",
+    "shipmentMethod": "delivery",
+    "paymentMethod": "cash",
+    "address": "Col. Las Flores, casa 12",
+    "zoneId": 12,
+    "lat": 14.0723,
+    "lng": -87.1921
+  }'
+```
+
+```text Postman
+Método:  POST
+URL:     https://beta.api-iobot-desarrollo.com/catalogs/orders/create
+
+Headers
+  Content-Type  application/json
+  x-api-key     TU_APP_KEY
+
+Body (raw JSON)
+{
+  "chatId": 252037,
+  "businessId": 92,
+  "type": "wa",
+  "shipmentMethod": "delivery",
+  "paymentMethod": "cash",
+  "address": "Col. Las Flores, casa 12",
+  "zoneId": 12,
+  "lat": 14.0723,
+  "lng": -87.1921
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Éxito
+{
+  "data": {
+    "id": 272993,
+    "chat_id": 252037,
+    "empresa_id": 92,
+    "status": 0,
+    "shipment_method": "delivery",
+    "payment_method": "cash",
+    "raw_adress": "Col. Las Flores, casa 12",
+    "zone_id": 12,
+    "lat": 14.0723,
+    "lng": -87.1921,
+    "type": "wa",
+    "soporte_id": null,
+    "sucursal_id": 4,
+    "schedule_at": null,
+    "createdAt": "2026-09-18T20:15:00.000Z",
+    "updatedAt": "2026-09-18T20:15:00.000Z"
+  }
+}
+```
+
+```json 400 Chat sin bot liberado ni ticket
+{
+  "message": "El chat tiene que tener el bot liberado o tener un ticket."
+}
+```
+
+```json 400 Zona requerida
+{
+  "message": "Zona es requerida"
+}
+```
+
+```json 401 App Key inválido
+{
+  "message": "Invalid API key"
+}
+```
+
+```json 500 Error inesperado
+{
+  "message": "Internal server error"
+}
+```
+</ResponseExample>

@@ -1,0 +1,95 @@
+---
+title: "Eliminar Producto de una Orden"
+description: "Elimina un detalle de producto (y sus extras) de una orden existente"
+api: "DELETE /catalogs/orders/details/delete"
+---
+
+Elimina un detalle de orden (`OrderDetails`) y todos los extras que tenga asociados. Notifica el cambio en tiempo real al canal correspondiente de la orden.
+
+<Note>
+  Aunque el método HTTP es `DELETE`, los parámetros se envían en el **body** de la solicitud (no como query params ni path params).
+</Note>
+
+## Autenticación
+
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
+
+## Body
+
+<ParamField body="detailId" type="number" required>
+  ID del detalle de orden (`OrderDetails`) a eliminar. Es el ID generado al agregar el producto con [Agregar Producto a una Orden](/ordenes/agregar-producto-orden), no el `articleId` del producto.
+</ParamField>
+
+<ParamField body="orderId" type="number" required>
+  ID de la orden a la que pertenece el detalle. Se usa para emitir el evento de actualización en tiempo real.
+</ParamField>
+
+## Comportamiento
+
+- Busca el detalle de orden (`detailId`); si no existe, responde `400`.
+- Borra todos los `OrderDetailsExtra` asociados a ese detalle.
+- Borra el `OrderDetails`.
+- Busca la orden (`orderId`) y emite un evento en tiempo real: usa el canal Soketi/Pusher para órdenes de tipo `app`/`web`, y el canal estándar para el resto de tipos (p. ej. `wa`).
+
+<Warning>
+  El endpoint no valida que `orderId` corresponda a una orden existente antes de borrar el detalle. Si envías un `orderId` inválido, el detalle y sus extras se eliminan igual, pero la respuesta será `500` al fallar la búsqueda de la orden para emitir el evento en tiempo real.
+</Warning>
+
+## Respuesta
+
+<ResponseField name="message" type="string">
+  `"Detalle borrado"` cuando el detalle se eliminó correctamente.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://beta.api-iobot-desarrollo.com/catalogs/orders/details/delete" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: TU_APP_KEY" \
+  -d '{
+    "detailId": 55021,
+    "orderId": 272992
+  }'
+```
+
+```text Postman
+Método:  DELETE
+URL:     https://beta.api-iobot-desarrollo.com/catalogs/orders/details/delete
+
+Headers
+  Content-Type  application/json
+  x-api-key     TU_APP_KEY
+
+Body (raw JSON)
+{
+  "detailId": 55021,
+  "orderId": 272992
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Éxito
+{
+  "message": "Detalle borrado"
+}
+```
+
+```json 400 Detalle no encontrado
+{
+  "message": "No existe"
+}
+```
+
+```json 401 App Key inválido
+{
+  "message": "Invalid API key"
+}
+```
+
+```json 500 Error inesperado
+{
+  "message": "Algo salió mal"
+}
+```
+</ResponseExample>

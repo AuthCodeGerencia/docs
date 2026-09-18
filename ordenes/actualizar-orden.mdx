@@ -1,0 +1,198 @@
+---
+title: "Actualizar una Orden"
+description: "Edita envío, pago, sucursal, dirección, estado de pago, fecha programada, ubicación y zona de una orden existente"
+api: "PUT /catalogs/order/update"
+---
+
+Actualiza los datos de una orden existente: método de envío, método de pago, sucursal, dirección, si está pagada, fecha programada, ubicación (lat/lng) y zona. Notifica el cambio en tiempo real al canal correspondiente de la orden.
+
+<Warning>
+  **Debes enviar siempre `shipmentMethod`, `paymentMethod`, `sucursalId`, `location_picked`, `raw_adress` y `paid`, aunque no quieras cambiarlos.**
+
+  Este endpoint no distingue entre "campo omitido" y "campo que se quiere borrar" para esos 6 campos: si no los incluyes en el body, se sobrescriben a `NULL` en la orden. Para no perder un valor actual, debes reenviarlo tal cual está.
+
+  Esto **no** aplica a `lat`, `lng`, `zoneId`/`zone_id` (solo se actualizan si vienen presentes) ni a `scheduleAt`/`schedule_at` (si se omite, conserva el valor actual de la orden).
+</Warning>
+
+## Autenticación
+
+Requiere el encabezado `x-api-key` con el App Key del negocio. Consulta [Autenticación](/authentication).
+
+## Body
+
+<ParamField body="orderId" type="number" required>
+  ID de la orden a actualizar.
+</ParamField>
+
+<ParamField body="shipmentMethod" type="string" required>
+  Método de entrega (`delivery`, `pickup`). Envía el valor actual si no quieres cambiarlo — omitirlo lo pone en `null`.
+</ParamField>
+
+<ParamField body="paymentMethod" type="string" required>
+  Método de pago. Envía el valor actual si no quieres cambiarlo — omitirlo lo pone en `null`.
+</ParamField>
+
+<ParamField body="sucursalId" type="number" required>
+  ID de la sucursal de la orden. Envía el valor actual si no quieres cambiarlo — omitirlo lo pone en `null`. Puede ser recalculado automáticamente (ver `shouldUpdateSucursal`).
+</ParamField>
+
+<ParamField body="location_picked" type="string" required>
+  Nombre/etiqueta de la ubicación elegida. Envía el valor actual si no quieres cambiarlo — omitirlo lo pone en `null`.
+</ParamField>
+
+<ParamField body="raw_adress" type="string" required>
+  Dirección de entrega en texto libre. Envía el valor actual si no quieres cambiarlo — omitirlo lo pone en `null`.
+</ParamField>
+
+<ParamField body="paid" type="boolean" required>
+  Si la orden está pagada. Envía el valor actual si no quieres cambiarlo — omitirlo lo pone en `null`.
+</ParamField>
+
+<ParamField body="shouldUpdateSucursal" type="boolean">
+  Si es `true` y `shipmentMethod` es `"delivery"`, recalcula `sucursalId` a partir de la sucursal de la zona (`zoneId`), sobrescribiendo lo enviado en `sucursalId`.
+</ParamField>
+
+<ParamField body="scheduleAt" type="string">
+  Fecha/hora programada para la orden. También se acepta como `schedule_at`. Si se omiten ambos, se conserva la fecha programada actual de la orden.
+</ParamField>
+
+<ParamField body="lat" type="number">
+  Latitud de la ubicación de entrega. Si se omite, no se modifica.
+</ParamField>
+
+<ParamField body="lng" type="number">
+  Longitud de la ubicación de entrega. Si se omite, no se modifica.
+</ParamField>
+
+<ParamField body="zoneId" type="number">
+  ID de la zona de entrega. También se acepta como `zone_id`. Si se omiten ambos, no se modifica.
+</ParamField>
+
+## Comportamiento
+
+- Busca la orden por `orderId`; si no existe, responde `400 "Order not found"`.
+- Actualiza `shipment_method`, `payment_method`, `sucursal_id`, `location_picked`, `raw_adress` y `paid` con lo enviado (ver advertencia arriba sobre campos omitidos).
+- Actualiza `schedule_at` con `scheduleAt` o `schedule_at`; si ninguno viene, conserva el valor actual.
+- Actualiza `lat`, `lng` y `zone_id` (`zoneId`/`zone_id`) solo si vienen presentes en el body.
+- Recarga la orden con sus relaciones `sucursal` y `zona` (con la `sucursal` de la zona incluida).
+- Si `shipment_method` quedó como `"delivery"` **y** `shouldUpdateSucursal` es `true`, recalcula `sucursal_id` = `zona.sucursal_id`, sobrescribiendo lo que se haya enviado en `sucursalId`.
+- Emite un evento en tiempo real: canal Soketi/Pusher si el tipo de la orden es `app`/`web`, canal estándar para el resto.
+
+## Respuesta
+
+<ResponseField name="order" type="object">
+  La orden actualizada, con `sucursal` y `zona` (incluyendo la `sucursal` de la zona).
+
+  <Expandable title="Propiedades principales">
+    <ResponseField name="id" type="number">ID de la orden.</ResponseField>
+    <ResponseField name="shipment_method" type="string">Método de entrega actualizado.</ResponseField>
+    <ResponseField name="payment_method" type="string">Método de pago actualizado.</ResponseField>
+    <ResponseField name="sucursal_id" type="number">Sucursal final de la orden (puede haber sido recalculada).</ResponseField>
+    <ResponseField name="location_picked" type="string">Ubicación elegida actualizada.</ResponseField>
+    <ResponseField name="raw_adress" type="string">Dirección actualizada.</ResponseField>
+    <ResponseField name="paid" type="boolean">Si la orden quedó marcada como pagada.</ResponseField>
+    <ResponseField name="schedule_at" type="string">Fecha programada de la orden.</ResponseField>
+    <ResponseField name="lat" type="number">Latitud actual de la orden.</ResponseField>
+    <ResponseField name="lng" type="number">Longitud actual de la orden.</ResponseField>
+    <ResponseField name="zone_id" type="number">Zona actual de la orden.</ResponseField>
+    <ResponseField name="sucursal" type="object">Datos de la sucursal asignada.</ResponseField>
+    <ResponseField name="zona" type="object">Datos de la zona asignada, con su `sucursal`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X PUT "https://beta.api-iobot-desarrollo.com/catalogs/order/update" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: TU_APP_KEY" \
+  -d '{
+    "orderId": 272992,
+    "shipmentMethod": "delivery",
+    "paymentMethod": "cash",
+    "sucursalId": 4,
+    "location_picked": "Sucursal Centro",
+    "raw_adress": "Col. Las Flores, casa 12",
+    "paid": false,
+    "shouldUpdateSucursal": true,
+    "zoneId": 12,
+    "lat": 14.0723,
+    "lng": -87.1921,
+    "scheduleAt": "2026-09-20T18:00:00Z"
+  }'
+```
+
+```text Postman
+Método:  PUT
+URL:     https://beta.api-iobot-desarrollo.com/catalogs/order/update
+
+Headers
+  Content-Type  application/json
+  x-api-key     TU_APP_KEY
+
+Body (raw JSON)
+{
+  "orderId": 272992,
+  "shipmentMethod": "delivery",
+  "paymentMethod": "cash",
+  "sucursalId": 4,
+  "location_picked": "Sucursal Centro",
+  "raw_adress": "Col. Las Flores, casa 12",
+  "paid": false,
+  "shouldUpdateSucursal": true,
+  "zoneId": 12,
+  "lat": 14.0723,
+  "lng": -87.1921,
+  "scheduleAt": "2026-09-20T18:00:00Z"
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 Éxito
+{
+  "order": {
+    "id": 272992,
+    "shipment_method": "delivery",
+    "payment_method": "cash",
+    "sucursal_id": 4,
+    "location_picked": "Sucursal Centro",
+    "raw_adress": "Col. Las Flores, casa 12",
+    "paid": false,
+    "schedule_at": "2026-09-20T18:00:00.000Z",
+    "lat": 14.0723,
+    "lng": -87.1921,
+    "zone_id": 12,
+    "sucursal": {
+      "id": 4,
+      "nombre": "Sucursal Centro"
+    },
+    "zona": {
+      "id": 12,
+      "precio": "35.00",
+      "sucursal": {
+        "id": 4,
+        "nombre": "Sucursal Centro"
+      }
+    }
+  }
+}
+```
+
+```json 400 Orden no encontrada
+{
+  "message": "Order not found"
+}
+```
+
+```json 401 App Key inválido
+{
+  "message": "Invalid API key"
+}
+```
+
+```json 500 Error inesperado
+{
+  "message": "Internal server error"
+}
+```
+</ResponseExample>
